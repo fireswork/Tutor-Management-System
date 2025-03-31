@@ -118,7 +118,7 @@ public class CourseServiceImpl implements CourseService {
                 .rating(course.getRating())
                 .studentCount(course.getStudentCount())
                 .teacherId(course.getTeacher().getId())
-                .teacherName(course.getTeacher().getUsername())
+                .teacherName(course.getTeacher().getRealName())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();

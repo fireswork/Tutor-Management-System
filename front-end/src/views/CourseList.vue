@@ -85,7 +85,7 @@
                       <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
                     </div>
                     <div class="course-teacher">
-                      <span>教师：{{ course.teacherName }}</span>
+                      <span>教师：{{ course.teacherName || '-' }}</span>
                       <a-rate :value="course.rating" disabled allow-half />
                     </div>
                     <a-tooltip :title="course.description">
