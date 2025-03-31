@@ -53,9 +53,9 @@
             theme="dark"
             mode="inline"
           >
-            <a-menu-item key="course-list">
+            <a-menu-item key="course-list" v-if="userRole !== 'ADMIN'">
               <template #icon><book-outlined /></template>
-              <span>课程管理</span>
+              <span>课程{{ userRole === "USER" ? "中心" : "管理" }}</span>
               <router-link to="/course-list"></router-link>
             </a-menu-item>
 
@@ -66,43 +66,32 @@
                 <template #icon><IdcardOutlined /></template>
                 <router-link to="/user/profile">个人信息</router-link>
               </a-menu-item>
-              <a-menu-item key="user-qualifications">
+              <a-menu-item key="user-qualifications" v-if="userRole === 'TEACHER'">
                 <template #icon><SafetyCertificateOutlined /></template>
                 <router-link to="/user/qualifications">资质管理</router-link>
               </a-menu-item>
             </a-sub-menu>
 
-            <a-menu-item key="order-manage">
+            <a-menu-item key="order-manage" v-if="userRole !== 'ADMIN'">
               <template #icon><shopping-outlined /></template>
               <span>订单管理</span>
               <router-link to="/order-manage"></router-link>
             </a-menu-item>
 
-            <a-menu-item key="review-manage">
+            <a-menu-item key="review-manage" v-if="userRole === 'USER'">
               <template #icon><solution-outlined /></template>
               <span>评价管理</span>
               <router-link to="/review-manage"></router-link>
             </a-menu-item>
 
-            <a-menu-item key="user-management">
-              <template #icon><UsergroupAddOutlined /></template>
-              <router-link to="/users">用户管理</router-link>
-            </a-menu-item>
-            <a-menu-item key="teacher-management">
-              <template #icon><TeamOutlined /></template>
-              <router-link to="/teachers">教师管理</router-link>
-            </a-menu-item>
-
-            <template>
-              <a-menu-item key="teacher-center">
-                <template #icon><solution-outlined /></template>
-                <span>教师中心</span>
-                <router-link to="/teacher-center"></router-link>
+            <template v-if="userRole === 'ADMIN'">
+              <a-menu-item key="user-management">
+                <template #icon><UsergroupAddOutlined /></template>
+                <router-link to="/users">用户管理</router-link>
               </a-menu-item>
-              <a-menu-item key="course-manage">
-                <template #icon><schedule-outlined /></template>
-                <span>课程管理</span>
-                <router-link to="/course-manage"></router-link>
+              <a-menu-item key="teacher-management">
+                <template #icon><TeamOutlined /></template>
+                <router-link to="/teachers">教师管理</router-link>
               </a-menu-item>
             </template>
           </a-menu>
