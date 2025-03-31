@@ -15,6 +15,8 @@ public class ReviewDTO {
     private Long id;
     private Long courseId;
     private String courseTitle;
+    private String courseCover;
+    private String teacherName;
     private Long orderId;
     private String studentName;
     private Double rating;

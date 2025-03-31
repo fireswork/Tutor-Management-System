@@ -26,4 +26,22 @@ public interface ReviewService {
     
     // 检查订单是否已评价
     boolean hasReview(Long orderId);
+
+    /**
+     * 更新评价
+     *
+     * @param id 评价ID
+     * @param reviewUpdateDTO 更新的评价数据
+     * @param studentId 学生ID
+     * @return 更新后的评价DTO
+     */
+    ReviewDTO updateReview(Long id, ReviewCreateDTO reviewUpdateDTO, Long studentId);
+
+    /**
+     * 删除评价
+     *
+     * @param id 评价ID
+     * @param studentId 学生ID
+     */
+    void deleteReview(Long id, Long studentId);
 } 

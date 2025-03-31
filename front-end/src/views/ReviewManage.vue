@@ -49,10 +49,10 @@
       <!-- 课程信息 -->
       <template #courseName="{ record }">
         <div class="course-info">
-          <img :src="record.course.cover" :alt="record.course.title" class="course-cover" />
+          <img :src="record.courseCover" :alt="record.courseTitle" class="course-cover" />
           <div class="course-detail">
-            <div class="course-title">{{ record.course.title }}</div>
-            <div class="course-teacher">教师：{{ record.course.teacherName }}</div>
+            <div class="course-title">{{ record.courseTitle }}</div>
+            <div class="course-teacher">教师：{{ record.teacherName }}</div>
           </div>
         </div>
       </template>
@@ -116,6 +116,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { api } from '../utils/axios'
+import dayjs from 'dayjs'
 
 // 表格加载状态
 const loading = ref(false)
@@ -133,7 +135,7 @@ const pagination = reactive({
 const columns = [
   {
     title: '课程信息',
-    dataIndex: 'courseName',
+    dataIndex: 'course',
     key: 'courseName',
     slots: { customRender: 'courseName' }
   },
@@ -152,9 +154,10 @@ const columns = [
   },
   {
     title: '评价时间',
-    dataIndex: 'time',
+    dataIndex: 'createdAt',
     key: 'time',
-    width: 180
+    width: 180,
+    customRender: ({ text }) => text ? dayjs(text).format('YYYY-MM-DD HH:mm') : '-'
   },
   {
     title: '操作',
@@ -164,31 +167,30 @@ const columns = [
   }
 ]
 
-// 模拟评价数据
-const reviews = ref([
-  {
-    id: 1,
-    course: {
-      title: '高中数学强化班',
-      cover: 'https://picsum.photos/100/100?random=1',
-      teacherName: '张老师'
-    },
-    rating: 5,
-    content: '老师讲课非常细致，对知识点的讲解很透彻，让我对这门课程有了更深的理解。',
-    time: '2024-03-15 14:30'
-  },
-  {
-    id: 2,
-    course: {
-      title: '英语口语提升课程',
-      cover: 'https://picsum.photos/100/100?random=2',
-      teacherName: '李老师'
-    },
-    rating: 4.5,
-    content: '课程内容安排合理，老师的教学方法很适合我，学习效果明显。',
-    time: '2024-03-14 10:00'
+// 评价数据
+const reviews = ref([])
+
+// 获取用户评价列表
+const fetchReviews = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: pagination.current - 1,
+      size: pagination.pageSize,
+      rating: searchForm.rating,
+      keyword: searchForm.keyword
+    }
+    
+    const response = await api.getStudentReviews(params)
+    reviews.value = response.reviews || []
+    pagination.total = response.totalItems || 0
+  } catch (error) {
+    console.error('获取评价列表失败:', error)
+    message.error('获取评价列表失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 // 搜索表单
 const searchForm = reactive({
@@ -199,27 +201,14 @@ const searchForm = reactive({
 // 处理搜索
 const handleSearch = () => {
   pagination.current = 1
-  // 实际项目中这里调用API重新获取数据
-  // 模拟搜索过滤
-  const filteredReviews = reviews.value.filter(review => {
-    const matchKeyword = searchForm.keyword ? 
-      (review.course.title.includes(searchForm.keyword) || 
-       review.course.teacherName.includes(searchForm.keyword)) : true
-    
-    const matchRating = searchForm.rating ? 
-      review.rating >= Number(searchForm.rating) : true
-
-    return matchKeyword && matchRating
-  })
-
-  reviews.value = filteredReviews
+  fetchReviews()
 }
 
 // 表格变化处理
 const handleTableChange = (pag) => {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
-  // 实际项目中这里调用API重新获取数据
+  fetchReviews()
 }
 
 // 编辑相关
@@ -240,35 +229,51 @@ const handleEdit = (record) => {
 }
 
 // 提交编辑
-const submitEdit = () => {
+const submitEdit = async () => {
   if (!editForm.content.trim()) {
     message.error('请填写评价内容')
     return
   }
 
   editLoading.value = true
-  // 模拟提交编辑
-  setTimeout(() => {
-    if (currentReview.value) {
-      currentReview.value.rating = editForm.rating
-      currentReview.value.content = editForm.content
-      currentReview.value.time = new Date().toLocaleString() + ' (已编辑)'
-      message.success('评价修改成功')
-      editModalVisible.value = false
-    }
+  try {
+    // 调用更新评价API
+    await api.updateReview(currentReview.value.id, {
+      rating: editForm.rating,
+      content: editForm.content
+    })
+    
+    message.success('评价修改成功')
+    editModalVisible.value = false
+    
+    // 重新获取列表
+    fetchReviews()
+  } catch (error) {
+    console.error('更新评价失败:', error)
+    message.error(error.response?.data?.message || '更新评价失败，请稍后重试')
+  } finally {
     editLoading.value = false
-  }, 1000)
+  }
 }
 
 // 删除评价
-const handleDelete = (record) => {
-  // 实际项目中这里调用API删除评价
-  reviews.value = reviews.value.filter(item => item.id !== record.id)
-  message.success('评价已删除')
+const handleDelete = async (record) => {
+  try {
+    // 调用删除评价API
+    await api.deleteReview(record.id)
+    
+    message.success('评价已删除')
+    
+    // 重新获取列表
+    fetchReviews()
+  } catch (error) {
+    console.error('删除评价失败:', error)
+    message.error(error.response?.data?.message || '删除评价失败，请稍后重试')
+  }
 }
 
 onMounted(() => {
-  // 实际项目中这里调用API获取评价列表
+  fetchReviews()
 })
 </script>
 

@@ -84,22 +84,27 @@
       <!-- 学生评价 -->
       <div class="student-reviews section-card">
         <h2>学生评价</h2>
-        <a-list :data-source="teacherReviews" :pagination="{ pageSize: 3 }">
+        <a-list :data-source="courseReviews" :pagination="{ pageSize: 3 }" :loading="reviewsLoading">
           <template #renderItem="{ item }">
             <a-list-item>
               <a-comment
                 :author="item.studentName"
                 :content="item.content"
-                :datetime="item.datetime"
+                :datetime="dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')"
               >
                 <template #avatar>
-                  <a-avatar :src="item.avatar" />
+                  <a-avatar>{{ item.studentName.charAt(0) }}</a-avatar>
                 </template>
                 <template #actions>
                   <a-rate :value="item.rating" disabled allow-half />
                 </template>
               </a-comment>
             </a-list-item>
+          </template>
+          <template #empty>
+            <div class="empty-data">
+              <a-empty description="暂无评价数据" />
+            </div>
           </template>
         </a-list>
       </div>
@@ -177,6 +182,7 @@ import {
   CalendarOutlined,
   EyeOutlined,
 } from "@ant-design/icons-vue";
+import dayjs from "dayjs";
 
 const route = useRoute();
 const router = useRouter();
@@ -195,37 +201,52 @@ const teacherInfo = ref({});
 const teacherAvatar = "https://picsum.photos/200";
 const teacherYears = 5;
 
-const teacherReviews = [
-  {
-    studentName: "张同学",
-    avatar: "https://picsum.photos/200?random=1",
-    content:
-      "老师讲课非常细致，对知识点的讲解很透彻，让我对这门课程有了更深的理解。",
-    datetime: "2024-03-10",
-    rating: 5,
-  },
-  {
-    studentName: "李同学",
-    avatar: "https://picsum.photos/200?random=2",
-    content: "课程内容安排合理，老师的教学方法很适合我，学习效果明显。",
-    datetime: "2024-03-09",
-    rating: 4.5,
-  },
-  {
-    studentName: "王同学",
-    avatar: "https://picsum.photos/200?random=3",
-    content: "老师很有耐心，针对我的问题都会详细解答，让我学习更有信心。",
-    datetime: "2024-03-08",
-    rating: 5,
-  },
-  {
-    studentName: "赵同学",
-    avatar: "https://picsum.photos/200?random=4",
-    content: "课程质量很高，老师的专业水平很强，讲解方式也很生动。",
-    datetime: "2024-03-07",
-    rating: 4.5,
-  },
-];
+// 课程评价
+const courseReviews = ref([]);
+const reviewsLoading = ref(false);
+
+// 获取课程详情
+const fetchCourseDetail = async (id) => {
+  try {
+    const response = await api.getCourseDetail(id);
+    course.value = response.course;
+    teacherInfo.value = response.teacherInfo;
+
+    // 存储完整的教师资质数据，用于弹窗展示
+    teacherQualificationsData.value = response.teacherQualifications || [];
+
+    // 处理教师资质信息
+    const qualifications = response.teacherQualifications || [];
+    teacherQualifications.value = {
+      education:
+        qualifications.find((q) => q.type === "EDUCATION")?.title || "未填写",
+      major: qualifications.find((q) => q.type === "MAJOR")?.title || "未填写",
+      certificates: qualifications
+        .filter((q) => q.type === "CERTIFICATE")
+        .map((q) => q.title),
+    };
+    
+    // 获取课程评价
+    fetchCourseReviews(id);
+  } catch (error) {
+    console.error("获取课程详情失败:", error);
+    message.error("获取课程详情失败，请稍后重试");
+  }
+};
+
+// 获取课程评价
+const fetchCourseReviews = async (courseId) => {
+  reviewsLoading.value = true;
+  try {
+    const response = await api.getCourseReviews(courseId, { page: 0, size: 5 });
+    courseReviews.value = response.reviews || [];
+  } catch (error) {
+    console.error("获取课程评价失败:", error);
+    message.error("获取课程评价失败");
+  } finally {
+    reviewsLoading.value = false;
+  }
+};
 
 // 资质详情弹窗
 const qualificationsModalVisible = ref(false);
@@ -254,32 +275,6 @@ const getStatusColor = (status) => {
     rejected: "red",
   };
   return colorMap[status] || "default";
-};
-
-// 获取课程详情
-const fetchCourseDetail = async (id) => {
-  try {
-    const response = await api.getCourseDetail(id);
-    course.value = response.course;
-    teacherInfo.value = response.teacherInfo;
-
-    // 存储完整的教师资质数据，用于弹窗展示
-    teacherQualificationsData.value = response.teacherQualifications || [];
-
-    // 处理教师资质信息
-    const qualifications = response.teacherQualifications || [];
-    teacherQualifications.value = {
-      education:
-        qualifications.find((q) => q.type === "EDUCATION")?.title || "未填写",
-      major: qualifications.find((q) => q.type === "MAJOR")?.title || "未填写",
-      certificates: qualifications
-        .filter((q) => q.type === "CERTIFICATE")
-        .map((q) => q.title),
-    };
-  } catch (error) {
-    console.error("获取课程详情失败:", error);
-    message.error("获取课程详情失败，请稍后重试");
-  }
 };
 
 // 处理预约课程

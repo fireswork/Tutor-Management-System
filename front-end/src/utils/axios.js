@@ -118,7 +118,9 @@ export const api = {
   getStudentReviews: (params) => instance.get('/reviews/student', { params }),
   getTeacherReviews: (params) => instance.get('/reviews/teacher', { params }),
   getOrderReview: (orderId) => instance.get(`/reviews/order/${orderId}`),
-  hasOrderReview: (orderId) => instance.get(`/reviews/order/${orderId}/exists`)
+  hasOrderReview: (orderId) => instance.get(`/reviews/order/${orderId}/exists`),
+  updateReview: (id, data) => instance.put(`/reviews/${id}`, data),
+  deleteReview: (id) => instance.delete(`/reviews/${id}`),
 }
 
 export default instance
