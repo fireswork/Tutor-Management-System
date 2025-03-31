@@ -14,7 +14,6 @@ const OrderManage = () => import("../views/OrderList.vue");
 const ReviewManage = () => import("../views/ReviewManage.vue");
 const UserManagement = () => import("../views/admin/UserManagement.vue");
 const TeacherManagement = () => import("../views/admin/TeacherManagement.vue");
-const SubjectManagement = () => import("../views/admin/SubjectManagement.vue");
 
 const routes = [
   {
@@ -107,12 +106,6 @@ const routes = [
     name: "TeacherManagement",
     component: TeacherManagement,
     meta: { title: "教师管理" },
-  },
-  {
-    path: "/subjects",
-    name: "SubjectManagement",
-    component: SubjectManagement,
-    meta: { title: "科目管理" },
   },
   {
     path: '/teachers/:teacherId/qualifications',

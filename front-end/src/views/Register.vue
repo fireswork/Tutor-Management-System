@@ -87,12 +87,16 @@
               </a-select>
             </a-form-item>
             
+            <a-form-item name="major" label="专业">
+              <a-input v-model:value="formState.major" placeholder="请输入您的专业" />
+            </a-form-item>
+            
             <a-form-item name="subjects" label="教授科目">
               <a-select 
                 v-model:value="formState.subjects" 
                 mode="multiple" 
                 placeholder="请选择您可以教授的科目"
-                :options="subjectOptions"
+                :options="SUBJECT_OPTIONS"
               ></a-select>
             </a-form-item>
             
@@ -147,11 +151,12 @@ import {
   LockOutlined, 
   MailOutlined, 
   PhoneOutlined, 
-  SafetyOutlined,
+  SafetyOutlined, 
   CheckCircleOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { api } from '../utils/axios'
+import { SUBJECT_OPTIONS } from '../utils/constants'
 
 const router = useRouter()
 const currentStep = ref(0)
@@ -166,6 +171,7 @@ const formState = reactive({
   confirmPassword: '',
   role: 'student',
   education: '',
+  major: '',
   subjects: [],
   experience: 0,
   bio: ''
@@ -193,23 +199,6 @@ const basicRules = {
     { required: true, message: '请确认密码', trigger: 'change' },
   ]
 }
-
-// 可选科目
-const subjectOptions = [
-  { value: '语文', label: '语文' },
-  { value: '数学', label: '数学' },
-  { value: '英语', label: '英语' },
-  { value: '物理', label: '物理' },
-  { value: '化学', label: '化学' },
-  { value: '生物', label: '生物' },
-  { value: '历史', label: '历史' },
-  { value: '地理', label: '地理' },
-  { value: '政治', label: '政治' },
-  { value: '音乐', label: '音乐' },
-  { value: '美术', label: '美术' },
-  { value: '体育', label: '体育' },
-  { value: '计算机', label: '计算机' }
-]
 
 // 确认密码验证
 function validateConfirmPassword(rule, value) {
@@ -240,6 +229,7 @@ const nextStep = () => {
         email: formState.email,
         phone: formState.phone,
         education: formState.role === 'teacher' ? formState.education : null,
+        major: formState.role === 'teacher' ? formState.major : null,
         subjects: formState.role === 'teacher' ? formState.subjects : null,
         experience: formState.role === 'teacher' ? formState.experience : null,
         bio: formState.role === 'teacher' ? formState.bio : null

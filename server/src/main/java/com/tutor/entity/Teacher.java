@@ -22,6 +22,8 @@ public class Teacher {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    private String education;  // 添加学历字段
+    private String major;     // 添加专业字段
     private Integer experience; // 教学经验(年)
     
     @Column(columnDefinition = "TEXT")

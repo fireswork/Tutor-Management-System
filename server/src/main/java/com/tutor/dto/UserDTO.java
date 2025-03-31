@@ -17,6 +17,7 @@ public class UserDTO {
     
     // 教师特有字段
     private String education;
+    private String major;
     private List<String> subjects;
     private Integer experience;
     private String bio;

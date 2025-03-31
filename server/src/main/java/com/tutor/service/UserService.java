@@ -68,6 +68,7 @@ public class UserService {
             TeacherProfile teacherProfile = new TeacherProfile();
             teacherProfile.setUser(savedUser);
             teacherProfile.setEducation(userDTO.getEducation());
+            teacherProfile.setMajor(userDTO.getMajor());
             
             // 将科目列表转换为逗号分隔的字符串
             String subjects = "";
@@ -84,9 +85,11 @@ public class UserService {
             // 同时创建Teacher记录
             Teacher teacher = new Teacher();
             teacher.setUser(savedUser);
+            teacher.setEducation(userDTO.getEducation());
+            teacher.setMajor(userDTO.getMajor());
             teacher.setExperience(userDTO.getExperience() != null ? userDTO.getExperience() : 0);
             teacher.setSubjects(subjects);
-            teacher.setStatus("active"); // 默认状态为active
+            teacher.setStatus("active");
             
             teacherRepository.save(teacher);
         }

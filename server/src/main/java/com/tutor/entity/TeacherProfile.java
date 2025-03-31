@@ -23,7 +23,8 @@ public class TeacherProfile {
     private User user;
 
     private String education;
-    
+    private String major;
+
     @Column(columnDefinition = "TEXT")
     private String subjects; // 存储为逗号分隔的字符串
     
