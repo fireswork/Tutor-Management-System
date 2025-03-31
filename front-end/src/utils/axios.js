@@ -93,6 +93,14 @@ export const api = {
   deleteTeacher: (id) => instance.delete(`/teachers/${id}`),
   getTeacherQualifications: (id) => instance.get(`/teachers/${id}/qualifications`),
   
+  // 课程相关接口
+  getAllCourses: (params) => instance.get('/courses', { params }),
+  getCourseById: (id) => instance.get(`/courses/${id}`),
+  getTeacherCourses: (params) => instance.get('/courses/teacher', { params }),
+  createCourse: (data) => instance.post('/courses', data),
+  updateCourseStatus: (id, status) => instance.put(`/courses/${id}/status?status=${status}`),
+  deleteCourse: (id) => instance.delete(`/courses/${id}`),
+  
   // 可以继续添加其他API请求方法
 }
 

@@ -1,0 +1,94 @@
+package com.tutor.controller;
+
+import com.tutor.dto.CourseCreateDTO;
+import com.tutor.dto.CourseDTO;
+import com.tutor.entity.User;
+import com.tutor.service.CourseService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/courses")
+@RequiredArgsConstructor
+public class CourseController {
+    
+    private final CourseService courseService;
+    
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> getAllCourses(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+        
+        Page<CourseDTO> coursePage = courseService.getAllCourses(category, keyword, page, size);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("courses", coursePage.getContent());
+        response.put("currentPage", coursePage.getNumber());
+        response.put("totalItems", coursePage.getTotalElements());
+        response.put("totalPages", coursePage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/teacher")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Map<String, Object>> getTeacherCourses(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+        
+        Page<CourseDTO> coursePage = courseService.getTeacherCourses(user.getId(), category, keyword, page, size);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("courses", coursePage.getContent());
+        response.put("currentPage", coursePage.getNumber());
+        response.put("totalItems", coursePage.getTotalElements());
+        response.put("totalPages", coursePage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long id) {
+        CourseDTO courseDTO = courseService.getCourseById(id);
+        return ResponseEntity.ok(courseDTO);
+    }
+    
+    @PostMapping
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<?> createCourse(
+            @RequestBody CourseCreateDTO courseCreateDTO,
+            @RequestParam Long teacherId) {
+        CourseDTO createdCourse = courseService.createCourse(courseCreateDTO, teacherId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdCourse);
+    }
+    
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<CourseDTO> updateCourseStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        
+        CourseDTO updatedCourse = courseService.updateCourseStatus(id, status);
+        return ResponseEntity.ok(updatedCourse);
+    }
+    
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        courseService.deleteCourse(id);
+        return ResponseEntity.noContent().build();
+    }
+} 

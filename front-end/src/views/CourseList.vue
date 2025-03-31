@@ -267,6 +267,7 @@ import {
   CloseCircleOutlined,
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
+import { api } from "../utils/axios"; // 导入 API
 
 const router = useRouter();
 
@@ -299,225 +300,43 @@ const categories = [
   "计算机",
 ];
 
-// 模拟课程数据
-const allCourses = ref([
-  {
-    id: 1,
-    title: "高中数学强化班",
-    cover: "https://picsum.photos/300/200?random=101",
-    teacherName: "张老师",
-    teacherId: 1,
-    category: "数学",
-    price: 200,
-    duration: 90,
-    rating: 4.8,
-    studentCount: 156,
-    description: "针对高考数学，从基础到难题逐步突破，提高解题能力和思维水平。",
-    status: "pending",
-  },
-  {
-    id: 2,
-    title: "英语口语提升课程",
-    cover: "https://picsum.photos/300/200?random=102",
-    teacherName: "李老师",
-    teacherId: 2,
-    category: "英语",
-    price: 180,
-    duration: 60,
-    rating: 4.9,
-    studentCount: 204,
-    description:
-      "地道英语口语培训，提升口语表达能力，着重培养日常交流和应试能力。",
-  },
-  {
-    id: 3,
-    title: "物理概念强化班",
-    cover: "https://picsum.photos/300/200?random=103",
-    teacherName: "王老师",
-    teacherId: 3,
-    category: "物理",
-    price: 220,
-    duration: 90,
-    rating: 4.7,
-    studentCount: 132,
-    description: "物理基础概念讲解，培养物理思维，掌握解题技巧和方法。",
-  },
-  {
-    id: 4,
-    title: "化学实验解析",
-    cover: "https://picsum.photos/300/200?random=104",
-    teacherName: "赵老师",
-    teacherId: 4,
-    category: "化学",
-    price: 190,
-    duration: 120,
-    rating: 4.6,
-    studentCount: 98,
-    description: "详解化学实验原理，提高实验操作技能，加深对化学反应的理解。",
-  },
-  {
-    id: 5,
-    title: "初中语文阅读写作",
-    cover: "https://picsum.photos/300/200?random=105",
-    teacherName: "钱老师",
-    teacherId: 5,
-    category: "语文",
-    price: 160,
-    duration: 90,
-    rating: 4.9,
-    studentCount: 175,
-    description: "提高阅读理解能力，培养写作思维和技巧，打好语文基础。",
-  },
-  {
-    id: 6,
-    title: "中国历史文化精讲",
-    cover: "https://picsum.photos/300/200?random=106",
-    teacherName: "孙老师",
-    teacherId: 6,
-    category: "历史",
-    price: 150,
-    duration: 90,
-    rating: 4.5,
-    studentCount: 142,
-    description: "系统讲解中国历史发展脉络，深入了解重要历史事件和人物。",
-  },
-  {
-    id: 7,
-    title: "生物学奥赛预备班",
-    cover: "https://picsum.photos/300/200?random=107",
-    teacherName: "周老师",
-    teacherId: 7,
-    category: "生物",
-    price: 240,
-    duration: 120,
-    rating: 4.7,
-    studentCount: 86,
-    description: "针对生物学奥林匹克竞赛，培养科学思维和实验能力。",
-  },
-  {
-    id: 8,
-    title: "世界地理知识总览",
-    cover: "https://picsum.photos/300/200?random=108",
-    teacherName: "吴老师",
-    teacherId: 8,
-    category: "地理",
-    price: 170,
-    duration: 90,
-    rating: 4.6,
-    studentCount: 124,
-    description: "全面了解世界各地地理知识，掌握地理学基本原理和方法。",
-  },
-  {
-    id: 9,
-    title: "政治思想与时事分析",
-    cover: "https://picsum.photos/300/200?random=109",
-    teacherName: "郑老师",
-    teacherId: 9,
-    category: "政治",
-    price: 180,
-    duration: 90,
-    rating: 4.8,
-    studentCount: 112,
-    description: "结合当前时事热点，深入分析政治理论，提高思辨能力。",
-  },
-  {
-    id: 10,
-    title: "数学竞赛技巧与方法",
-    cover: "https://picsum.photos/300/200?random=110",
-    teacherName: "冯老师",
-    teacherId: 10,
-    category: "数学",
-    price: 250,
-    duration: 120,
-    rating: 4.9,
-    studentCount: 78,
-    description: "针对各类数学竞赛，讲解解题思路和技巧，培养数学思维。",
-  },
-  {
-    id: 11,
-    title: "商务英语写作与口语",
-    cover: "https://picsum.photos/300/200?random=111",
-    teacherName: "陈老师",
-    teacherId: 11,
-    category: "英语",
-    price: 220,
-    duration: 90,
-    rating: 4.7,
-    studentCount: 146,
-    description: "针对商务场景的英语写作和口语训练，提高职场英语水平。",
-  },
-  {
-    id: 12,
-    title: "钢琴基础入门",
-    cover: "https://picsum.photos/300/200?random=112",
-    teacherName: "楚老师",
-    teacherId: 12,
-    category: "音乐",
-    price: 280,
-    duration: 60,
-    rating: 5.0,
-    studentCount: 94,
-    description: "从零开始学习钢琴，掌握基本的演奏技巧和乐理知识。",
-  },
-  {
-    id: 13,
-    title: "初中数学思维培养",
-    cover: "https://picsum.photos/300/200?random=113",
-    teacherName: "张老师",
-    teacherId: 1,
-    category: "数学",
-    price: 180,
-    duration: 90,
-    rating: 4.8,
-    studentCount: 187,
-    description: "培养数学思维，打好初中数学基础，提高解题能力。",
-  },
-  {
-    id: 14,
-    title: "英语阅读理解技巧",
-    cover: "https://picsum.photos/300/200?random=114",
-    teacherName: "李老师",
-    teacherId: 2,
-    category: "英语",
-    price: 160,
-    duration: 90,
-    rating: 4.7,
-    studentCount: 165,
-    description: "提高英语阅读理解能力，掌握解题技巧，提升阅读速度。",
-  },
-  {
-    id: 15,
-    title: "高中化学专题突破",
-    cover: "https://picsum.photos/300/200?random=115",
-    teacherName: "赵老师",
-    teacherId: 4,
-    category: "化学",
-    price: 200,
-    duration: 90,
-    rating: 4.8,
-    studentCount: 105,
-    description: "针对高中化学难点专题进行深入讲解，突破学习瓶颈。",
-  },
-  {
-    id: 16,
-    title: "小学语文阅读写作启蒙",
-    cover: "https://picsum.photos/300/200?random=116",
-    teacherName: "钱老师",
-    teacherId: 5,
-    category: "语文",
-    price: 140,
-    duration: 60,
-    rating: 4.9,
-    studentCount: 206,
-    description: "培养阅读兴趣和写作能力，打好语文基础，激发学习热情。",
-  },
-]);
+// 课程数据
+const allCourses = ref([]);
+const loading = ref(false);
+
+// 获取课程列表
+const fetchCourses = async () => {
+  loading.value = true;
+  try {
+    const params = {
+      category: filterForm.category,
+      keyword: filterForm.keyword,
+      page: pagination.current - 1, // 后端分页从0开始
+      size: pagination.pageSize
+    };
+    
+    let response;
+    if (userRole.value === 'teacher') {
+      response = await api.getTeacherCourses(params);
+    } else {
+      response = await api.getAllCourses(params);
+    }
+    
+    allCourses.value = response.courses;
+    pagination.current = response.currentPage + 1; // 前端分页从1开始
+    pagination.total = response.totalItems;
+  } catch (error) {
+    console.error("获取课程列表失败:", error);
+    message.error("获取课程列表失败，请稍后重试");
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 处理筛选条件变化
 const handleFilterChange = () => {
   pagination.current = 1;
-  // 这里可以调用API获取数据
-  // fetchCourseList()
+  fetchCourses();
 };
 
 // 处理输入框变化（使用防抖）
@@ -538,61 +357,26 @@ function debounce(fn, delay) {
 
 // 修改 filteredCourses computed 属性
 const filteredCourses = computed(() => {
-  let result = [...allCourses.value];
-
-  // 应用筛选条件
-  if (filterForm.category) {
-    result = result.filter((course) => course.category === filterForm.category);
-  }
-
-  if (filterForm.keyword) {
-    const keyword = filterForm.keyword.toLowerCase();
-    result = result.filter(
-      (course) =>
-        course.title.toLowerCase().includes(keyword) ||
-        course.teacherName.toLowerCase().includes(keyword) ||
-        course.description.toLowerCase().includes(keyword)
-    );
-  }
-
-  // 分页处理
-  const startIndex = (pagination.current - 1) * pagination.pageSize;
-  const endIndex = startIndex + pagination.pageSize;
-
-  return result.slice(startIndex, endIndex);
+  return allCourses.value;
 });
 
 // 修改 totalCourses computed 属性
 const totalCourses = computed(() => {
-  let result = [...allCourses.value];
-
-  if (filterForm.category) {
-    result = result.filter((course) => course.category === filterForm.category);
-  }
-
-  if (filterForm.keyword) {
-    const keyword = filterForm.keyword.toLowerCase();
-    result = result.filter(
-      (course) =>
-        course.title.toLowerCase().includes(keyword) ||
-        course.teacherName.toLowerCase().includes(keyword) ||
-        course.description.toLowerCase().includes(keyword)
-    );
-  }
-
-  return result.length;
+  return pagination.total || 0;
 });
 
 // 页面变化处理
 const handlePageChange = (page, pageSize) => {
   pagination.current = page;
   pagination.pageSize = pageSize;
+  fetchCourses();
 };
 
 // 每页条数变化处理
 const handleSizeChange = (current, size) => {
   pagination.current = 1;
   pagination.pageSize = size;
+  fetchCourses();
 };
 
 // 查看课程详情
@@ -677,34 +461,42 @@ const handlePreview = async (file) => {
 
 // 发布课程
 const handlePublishCourse = () => {
-  publishFormRef.value.validate().then(() => {
+  publishFormRef.value.validate().then(async () => {
     if (coverFileList.value.length === 0) {
       message.error("请上传课程封面");
       return;
     }
 
     publishLoading.value = true;
-    // 模拟发布请求
-    setTimeout(() => {
-      const newCourse = {
-        id: Date.now(),
+    
+    try {
+      // 处理图片上传
+      const coverUrl = coverFileList.value[0].url || await getBase64(coverFileList.value[0].originFileObj);
+      
+      // 准备课程数据
+      const courseData = {
         ...publishForm,
-        teacherName: "当前教师", // 实际应该是当前登录教师的名字
-        teacherId: 1, // 实际应该是当前登录教师的ID
-        rating: 5.0,
-        studentCount: 0,
-        cover: coverFileList.value[0].url || "https://picsum.photos/300/200",
+        cover: coverUrl
       };
-
-      allCourses.value.unshift(newCourse);
-      publishModalVisible.value = false;
-      publishLoading.value = false;
+      
+      // 发送创建课程请求
+      const createdCourse = await api.createCourse(courseData);
+      
       message.success("课程发布成功");
-
+      publishModalVisible.value = false;
+      
+      // 重新获取课程列表
+      fetchCourses();
+      
       // 重置表单
       publishFormRef.value.resetFields();
       coverFileList.value = [];
-    }, 1500);
+    } catch (error) {
+      console.error("发布课程失败:", error);
+      message.error("发布课程失败，请稍后重试");
+    } finally {
+      publishLoading.value = false;
+    }
   });
 };
 
@@ -719,7 +511,7 @@ const getBase64 = (file) => {
 };
 
 // 添加审核处理函数
-const handleAudit = (course, status) => {
+const handleAudit = async (course, status) => {
   if (!localStorage.getItem("token")) {
     message.info("请先登录");
     router.push({
@@ -729,19 +521,26 @@ const handleAudit = (course, status) => {
     return;
   }
 
-  // 更新课程状态
-  const targetCourse = allCourses.value.find((c) => c.id === course.id);
-  if (targetCourse) {
-    targetCourse.status = status;
+  try {
+    await api.updateCourseStatus(course.id, status);
+    
     const action = status === "approved" ? "通过" : "拒绝";
     message.success(`已${action}课程: ${course.title}`);
+    
+    // 更新本地课程状态
+    const targetCourse = allCourses.value.find((c) => c.id === course.id);
+    if (targetCourse) {
+      targetCourse.status = status;
+    }
+  } catch (error) {
+    console.error("审核课程失败:", error);
+    message.error("审核操作失败，请稍后重试");
   }
 };
 
 // 页面加载时的处理
 onMounted(() => {
-  // 实际项目中可能需要从API获取课程列表数据
-  // 这里使用模拟数据
+  fetchCourses();
 });
 </script>
 
