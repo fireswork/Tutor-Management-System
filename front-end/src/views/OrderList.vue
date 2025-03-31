@@ -101,7 +101,7 @@
               </a-button>
             </template>
             <!-- 已支付状态用户可以完成订单 -->
-            <template v-if="record.status === 'paid'">
+            <template v-if="record.status === 'paid' && userRole === 'teacher'">
               <a-button type="primary" size="small" @click="handleComplete(record)">
                 完成订单
               </a-button>
@@ -192,7 +192,7 @@ import { api } from '../utils/axios'
 import dayjs from 'dayjs'
 
 // 用户角色
-const userRole = ref(localStorage.getItem('userRole') ? localStorage.getItem('userRole').toLowerCase() : 'user')
+const userRole = ref(localStorage.getItem('userRole').toLowerCase() || 'user')
 
 // 表格加载状态
 const loading = ref(false)

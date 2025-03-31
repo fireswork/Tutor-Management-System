@@ -93,7 +93,7 @@
                 :datetime="dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')"
               >
                 <template #avatar>
-                  <a-avatar>{{ item.studentName.charAt(0) }}</a-avatar>
+                  <a-avatar>{{ item.studentName?.charAt(0) || '用户' }}</a-avatar>
                 </template>
                 <template #actions>
                   <a-rate :value="item.rating" disabled allow-half />

@@ -32,11 +32,9 @@
             allowClear
             @change="handleSearch"
           >
-            <a-select-option value="math">数学</a-select-option>
-            <a-select-option value="english">英语</a-select-option>
-            <a-select-option value="chinese">语文</a-select-option>
-            <a-select-option value="physics">物理</a-select-option>
-            <a-select-option value="chemistry">化学</a-select-option>
+            <a-select-option v-for="option in SUBJECT_OPTIONS" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -64,8 +62,12 @@
     <a-modal
       v-model:visible="modalVisible"
       :title="modalTitle"
+      :confirmLoading="loading"
       @ok="handleModalOk"
       @cancel="handleModalCancel"
+      okText="保存"
+      cancelText="取消"
+      width="550px"
     >
       <a-form
         ref="formRef"
@@ -75,29 +77,34 @@
         :wrapper-col="{ span: 16 }"
       >
         <a-form-item label="姓名" name="name">
-          <a-input v-model:value="formState.name" />
+          <a-input v-model:value="formState.name" placeholder="请输入教师姓名" />
         </a-form-item>
         <a-form-item label="邮箱" name="email">
-          <a-input v-model:value="formState.email" />
+          <a-input v-model:value="formState.email" placeholder="请输入教师邮箱" />
         </a-form-item>
         <a-form-item label="手机号" name="phone">
-          <a-input v-model:value="formState.phone" />
+          <a-input v-model:value="formState.phone" placeholder="请输入手机号码" />
+        </a-form-item>
+        <a-form-item label="学历" name="education">
+          <a-select
+            v-model:value="formState.education"
+            style="width: 100%"
+            placeholder="请选择学历"
+            :options="educationOptions"
+          >
+          </a-select>
         </a-form-item>
         <a-form-item label="教学科目" name="subjects">
           <a-select
             v-model:value="formState.subjects"
             mode="multiple"
             placeholder="请选择教学科目"
+            :options="SUBJECT_OPTIONS"
           >
-            <a-select-option value="math">数学</a-select-option>
-            <a-select-option value="english">英语</a-select-option>
-            <a-select-option value="chinese">语文</a-select-option>
-            <a-select-option value="physics">物理</a-select-option>
-            <a-select-option value="chemistry">化学</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="教学经验" name="experience">
-          <a-input-number v-model:value="formState.experience" :min="0" addonAfter="年" />
+          <a-input-number v-model:value="formState.experience" :min="0" style="width: 100%" addonAfter="年" placeholder="请输入教学经验" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -137,6 +144,7 @@ import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import axios, { api } from '../../utils/axios'
+import { SUBJECT_OPTIONS, SUBJECTS } from '../../utils/constants'
 
 const router = useRouter()
 
@@ -145,6 +153,32 @@ const searchForm = ref({
   name: '',
   subject: undefined
 })
+
+// 数据状态
+const loading = ref(false)
+const teacherList = ref([])
+const modalVisible = ref(false)
+const modalTitle = ref('添加教师')
+const formRef = ref(null)
+const qualificationsModalVisible = ref(false)
+const selectedTeacher = ref(null)
+const formState = ref({
+  name: '',
+  email: '',
+  phone: '',
+  subjects: [],
+  experience: 0,
+  education: ''
+})
+
+// 学历选项
+const educationOptions = [
+  { value: '大学本科', label: '大学本科' },
+  { value: '硕士研究生', label: '硕士研究生' },
+  { value: '博士研究生', label: '博士研究生' },
+  { value: '大专', label: '大专' },
+  { value: '其他', label: '其他' }
+]
 
 // 表格列定义
 const columns = [
@@ -164,18 +198,17 @@ const columns = [
     key: 'phone',
   },
   {
+    title: '学历',
+    dataIndex: 'education',
+    key: 'education',
+  },
+  {
     title: '教学科目',
     dataIndex: 'subjects',
     key: 'subjects',
     customRender: ({ text }) => {
-      const subjectMap = {
-        math: '数学',
-        english: '英语',
-        chinese: '语文',
-        physics: '物理',
-        chemistry: '化学'
-      }
-      return text.map(subject => subjectMap[subject] || subject).join(', ')
+      if (!text || text.length === 0) return '';
+      return text.join(', ');
     }
   },
   {
@@ -190,14 +223,30 @@ const columns = [
   },
 ]
 
-// 数据状态
-const loading = ref(false)
-const teacherList = ref([])
-const modalVisible = ref(false)
-const modalTitle = ref('添加教师')
-const formRef = ref(null)
-const qualificationsModalVisible = ref(false)
-const selectedTeacher = ref(null)
+// 表单验证规则
+const rules = {
+  name: [
+    { required: true, message: '请输入教师姓名', trigger: 'blur' },
+    { min: 2, message: '姓名长度至少为2个字符', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: '请输入手机号码', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' }
+  ],
+  subjects: [
+    { required: true, type: 'array', min: 1, message: '请至少选择一个教学科目', trigger: 'change' }
+  ],
+  experience: [
+    { required: true, type: 'number', message: '请输入教学经验年数', trigger: 'change' }
+  ],
+  education: [
+    { required: true, message: '请选择学历', trigger: 'change' }
+  ]
+}
 
 // 筛选后的教师列表
 const filteredTeacherList = computed(() => {
@@ -257,7 +306,11 @@ const showAddModal = () => {
     email: '',
     phone: '',
     subjects: [],
-    experience: 0
+    experience: 0,
+    education: ''
+  }
+  if (formRef.value) {
+    formRef.value.resetFields()
   }
   modalVisible.value = true
 }
@@ -265,7 +318,18 @@ const showAddModal = () => {
 // 显示编辑教师弹窗
 const handleEdit = (record) => {
   modalTitle.value = '编辑教师'
-  formState.value = { ...record }
+  formState.value = { 
+    id: record.id,
+    name: record.name,
+    email: record.email,
+    phone: record.phone,
+    subjects: [...record.subjects], // 创建副本以避免直接修改原始数据
+    experience: record.experience,
+    education: record.education
+  }
+  if (formRef.value) {
+    formRef.value.resetFields()
+  }
   modalVisible.value = true
 }
 
@@ -299,22 +363,51 @@ const handleDelete = async (id) => {
 // 处理弹窗确认
 const handleModalOk = async () => {
   try {
+    // 表单验证
     await formRef.value.validate()
+    
+    // 显示加载状态
+    loading.value = true
+    
+    // 准备数据
+    const teacherData = {
+      id: formState.value.id,
+      name: formState.value.name,
+      email: formState.value.email,
+      phone: formState.value.phone,
+      subjects: formState.value.subjects,
+      experience: formState.value.experience,
+      education: formState.value.education,
+      status: 'active' // 默认设置为活跃状态
+    }
+    
     // 调用后端API保存教师
     const isAdd = modalTitle.value === '添加教师'
     
     if (isAdd) {
-      await api.addTeacher(formState.value)
+      // 添加教师
+      await api.addTeacher(teacherData)
+      message.success('添加教师成功')
     } else {
-      await api.updateTeacher(formState.value.id, formState.value)
+      // 更新教师
+      await api.updateTeacher(teacherData.id, teacherData)
+      message.success('编辑教师成功')
     }
     
-    message.success(`${modalTitle.value}成功`)
+    // 关闭弹窗并刷新列表
     modalVisible.value = false
     fetchTeacherList()
   } catch (error) {
-    console.error(error)
-    message.error(error.response?.data?.error || `${modalTitle.value}失败`)
+    if (error.errorFields) {
+      // 表单验证错误
+      message.error('请检查表单填写是否正确')
+    } else {
+      // API请求错误
+      console.error(error)
+      message.error(error.response?.data?.error || `${modalTitle.value}失败`)
+    }
+  } finally {
+    loading.value = false
   }
 }
 

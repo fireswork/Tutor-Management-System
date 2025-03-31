@@ -52,6 +52,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setEmail(userDTO.getEmail());
         user.setPhone(userDTO.getPhone());
+        user.setRealName(userDTO.getRealName());
         user.setRole(UserRole.USER); // 默认注册为普通用户
         
         // 如果提供了教师信息，则设置为教师角色

@@ -31,6 +31,12 @@
             </a-input>
           </a-form-item>
           
+          <a-form-item name="realName" label="真实姓名">
+            <a-input v-model:value="formState.realName" placeholder="请输入真实姓名">
+              <template #prefix><user-outlined /></template>
+            </a-input>
+          </a-form-item>
+          
           <a-form-item name="email" label="电子邮箱">
             <a-input v-model:value="formState.email" placeholder="请输入电子邮箱">
               <template #prefix><mail-outlined /></template>
@@ -165,6 +171,7 @@ const loading = ref(false)
 // 表单数据
 const formState = reactive({
   username: '',
+  realName: '',
   email: '',
   phone: '',
   password: '',
@@ -182,6 +189,10 @@ const basicRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'change' },
     { min: 3, message: '用户名长度至少为3个字符', trigger: 'change' }
+  ],
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'change' },
+    { min: 2, message: '姓名长度至少为2个字符', trigger: 'change' }
   ],
   email: [
     { required: true, message: '请输入电子邮箱', trigger: 'change' },
@@ -225,6 +236,7 @@ const nextStep = () => {
       // 调用注册接口
       api.register({
         username: formState.username,
+        realName: formState.realName,
         password: formState.password,
         email: formState.email,
         phone: formState.phone,

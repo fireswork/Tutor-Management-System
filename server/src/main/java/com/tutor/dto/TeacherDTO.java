@@ -16,6 +16,7 @@ public class TeacherDTO {
     private String name;
     private String email;
     private String phone;
+    private String education;
     private List<String> subjects;
     private Integer experience;
     private String status;

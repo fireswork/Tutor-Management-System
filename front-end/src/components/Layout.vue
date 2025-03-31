@@ -20,7 +20,7 @@
       <div class="header-right">
         <a-dropdown>
           <div class="user-info">
-            <a-avatar :size="32">{{ userName?.charAt(0) || "U" }}</a-avatar>
+            <a-avatar :size="32">{{ userRole === "ADMIN" ? "管" : userRole === "USER" ? "用" : "师" }}</a-avatar>
             <span class="username">{{ userName || "用户" }}</span>
           </div>
           <template #overlay>
@@ -181,8 +181,7 @@ watch(() => route.path, handleRouteChange, { immediate: true });
 // 用户信息
 const isLoggedIn = ref(!!localStorage.getItem("token"));
 const userName = ref(localStorage.getItem("userName") || "");
-const isTeacher = ref(localStorage.getItem("userRole") === "teacher");
-const isAdmin = ref(localStorage.getItem("userRole") === "admin");
+const userRole = ref(localStorage.getItem("userRole") || "");
 
 onMounted(() => {
   handleRouteChange(route.path);

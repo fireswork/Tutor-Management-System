@@ -54,10 +54,10 @@ public class OrderServiceImpl implements OrderService {
         Course course = courseRepository.findById(orderCreateDTO.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + orderCreateDTO.getCourseId()));
         
-        // 检查是否已有未取消的订单
-        boolean hasActiveOrder = orderRepository.existsByStudentAndCourseAndStatusNot(student, course, "cancelled");
+        // 检查是否已有待支付或已支付的订单
+        boolean hasActiveOrder = orderRepository.existsActiveOrderByStudentAndCourse(student, course);
         if (hasActiveOrder) {
-            throw new IllegalStateException("您已经有该课程的有效订单");
+            throw new IllegalStateException("您已经有该课程的待支付或已支付订单");
         }
         
         // 创建订单

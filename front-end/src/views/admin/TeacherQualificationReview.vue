@@ -284,7 +284,7 @@ const confirmReject = async () => {
 
 // 返回
 const goBack = () => {
-  router.push('/admin/teachers')
+  router.push('/teachers')
 }
 
 // 页面加载

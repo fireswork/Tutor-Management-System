@@ -77,6 +77,7 @@ public class TeacherService {
         // 创建教师
         Teacher teacher = new Teacher();
         teacher.setUser(user);
+        teacher.setEducation(teacherDTO.getEducation());
         teacher.setExperience(teacherDTO.getExperience());
         teacher.setSubjects(String.join(",", teacherDTO.getSubjects()));
         teacher.setStatus(teacherDTO.getStatus());
@@ -101,6 +102,7 @@ public class TeacherService {
         
         userRepository.save(user);
         
+        teacher.setEducation(teacherDTO.getEducation());
         teacher.setExperience(teacherDTO.getExperience());
         teacher.setSubjects(String.join(",", teacherDTO.getSubjects()));
         teacher.setStatus(teacherDTO.getStatus());
@@ -213,6 +215,7 @@ public class TeacherService {
         dto.setName(teacher.getUser().getRealName());
         dto.setEmail(teacher.getUser().getEmail());
         dto.setPhone(teacher.getUser().getPhone());
+        dto.setEducation(teacher.getEducation());
         dto.setExperience(teacher.getExperience());
         dto.setStatus(teacher.getStatus());
         
