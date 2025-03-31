@@ -5,8 +5,8 @@
     <div class="course-list-header">
       <div class="header-content">
         <div>
-          <h2>浏览课程</h2>
-          <p>探索各类优质课程，找到适合您的学习方案</p>
+          <h2>{{ headerContent.title }}</h2>
+          <p>{{ headerContent.description }}</p>
         </div>
         <!-- 教师角色显示发布课程按钮 -->
         <a-button
@@ -54,98 +54,100 @@
 
     <!-- 课程列表 -->
     <div class="course-list-content">
-      <a-row :gutter="[24, 24]">
-        <a-col
-          :xs="24"
-          :sm="12"
-          :md="8"
-          :xl="6"
-          v-for="(course, index) in filteredCourses"
-          :key="course.id"
-        >
-          <a-card
-            hoverable
-            class="course-card animate__animated animate__fadeIn"
+      <a-spin :spinning="loading">
+        <a-row :gutter="[24, 24]">
+          <a-col
+            :xs="24"
+            :sm="12"
+            :md="8"
+            :xl="6"
+            v-for="(course, index) in filteredCourses"
+            :key="course.id"
           >
-            <template #cover>
-              <div class="course-cover">
-                <img :src="course.cover" :alt="course.title" />
-                <div class="course-pricing">
-                  <span>¥{{ course.price }}/课时</span>
-                </div>
-              </div>
-            </template>
-
-            <a-card-meta :title="course.title">
-              <template #description>
-                <div class="course-info">
-                  <div class="course-tags">
-                    <a-tag color="blue">{{ course.category }}</a-tag>
-                    <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
+            <a-card
+              hoverable
+              class="course-card animate__animated animate__fadeIn"
+            >
+              <template #cover>
+                <div class="course-cover">
+                  <img :src="course.cover" :alt="course.title" />
+                  <div class="course-pricing">
+                    <span>¥{{ course.price }}/课时</span>
                   </div>
-                  <div class="course-teacher">
-                    <span>教师：{{ course.teacherName }}</span>
-                    <a-rate :value="course.rating" disabled allow-half />
-                  </div>
-                  <a-tooltip :title="course.description">
-                    <p class="course-desc">{{ course.description }}</p>
-                  </a-tooltip>
                 </div>
               </template>
-            </a-card-meta>
 
-            <template #actions>
-              <!-- 教师只能看到自己课程的编辑和删除按钮 -->
-              <template v-if="userRole === 'teacher'">
-                <a-button type="link" @click="handleEditCourse(course)">
-                  <template #icon><EditOutlined /></template>
-                  编辑
-                </a-button>
-                <a-popconfirm
-                  title="确定要删除这个课程吗？"
-                  ok-text="确定"
-                  cancel-text="取消"
-                  @confirm="handleDeleteCourse(course.id)"
-                >
-                  <a-button type="link" danger>
-                    <template #icon><DeleteOutlined /></template>
-                    删除
+              <a-card-meta :title="course.title">
+                <template #description>
+                  <div class="course-info">
+                    <div class="course-tags">
+                      <a-tag color="blue">{{ course.category }}</a-tag>
+                      <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
+                    </div>
+                    <div class="course-teacher">
+                      <span>教师：{{ course.teacherName }}</span>
+                      <a-rate :value="course.rating" disabled allow-half />
+                    </div>
+                    <a-tooltip :title="course.description">
+                      <p class="course-desc">{{ course.description }}</p>
+                    </a-tooltip>
+                  </div>
+                </template>
+              </a-card-meta>
+
+              <template #actions>
+                <!-- 教师只能看到自己课程的编辑和删除按钮 -->
+                <template v-if="userRole === 'teacher'">
+                  <a-button type="link" @click="handleEditCourse(course)">
+                    <template #icon><EditOutlined /></template>
+                    编辑
                   </a-button>
-                </a-popconfirm>
+                  <a-popconfirm
+                    title="确定要删除这个课程吗？"
+                    ok-text="确定"
+                    cancel-text="取消"
+                    @confirm="handleDeleteCourse(course.id)"
+                  >
+                    <a-button type="link" danger>
+                      <template #icon><DeleteOutlined /></template>
+                      删除
+                    </a-button>
+                  </a-popconfirm>
+                </template>
+                <!-- 非教师（学生）只能看到查看详情和预约按钮 -->
+                <template v-else>
+                  <a-button type="link" @click="viewCourseDetail(course.id)">
+                    查看详情
+                  </a-button>
+                  <a-button type="link" @click="handleBookCourse(course)">
+                    立即预约
+                  </a-button>
+                </template>
               </template>
-              <!-- 非教师（学生）只能看到查看详情和预约按钮 -->
-              <template v-else>
-                <a-button type="link" @click="viewCourseDetail(course.id)">
-                  查看详情
-                </a-button>
-                <a-button type="link" @click="handleBookCourse(course)">
-                  立即预约
-                </a-button>
-              </template>
-            </template>
-          </a-card>
-        </a-col>
-      </a-row>
+            </a-card>
+          </a-col>
+        </a-row>
 
-      <!-- 空状态 -->
-      <a-empty
-        v-if="filteredCourses.length === 0"
-        description="未找到符合条件的课程"
-      />
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <a-pagination
-          v-model:current="pagination.current"
-          :total="totalCourses"
-          :pageSize="pagination.pageSize"
-          show-size-changer
-          show-quick-jumper
-          :show-total="(total) => `共 ${total} 条记录`"
-          @change="handlePageChange"
-          @showSizeChange="handleSizeChange"
+        <!-- 空状态 -->
+        <a-empty
+          v-if="!loading && filteredCourses.length === 0"
+          description="未找到符合条件的课程"
         />
-      </div>
+
+        <!-- 分页 -->
+        <div class="pagination-container">
+          <a-pagination
+            v-model:current="pagination.current"
+            :total="totalCourses"
+            :pageSize="pagination.pageSize"
+            show-size-changer
+            show-quick-jumper
+            :show-total="(total) => `共 ${total} 条记录`"
+            @change="handlePageChange"
+            @showSizeChange="handleSizeChange"
+          />
+        </div>
+      </a-spin>
     </div>
 
     <!-- 发布课程的Modal -->
@@ -370,26 +372,26 @@ const fetchCourses = async () => {
   loading.value = true;
   try {
     const params = {
+      page: pagination.current - 1,
+      size: pagination.pageSize,
       category: filterForm.category,
-      keyword: filterForm.keyword,
-      page: pagination.current - 1, // 后端分页从0开始
-      size: pagination.pageSize
+      keyword: filterForm.keyword
     };
-    
+
     let response;
+    // 根据用户角色决定获取哪种课程列表
     if (userRole.value === 'teacher') {
       response = await api.getTeacherCourses(params);
-      console.log(response, 222222)
     } else {
+      // 普通用户获取所有课程
       response = await api.getAllCourses(params);
     }
-    
-    allCourses.value = response.courses;
-    pagination.current = response.currentPage + 1; // 前端分页从1开始
-    pagination.total = response.totalItems;
+
+    filteredCourses.value = response.courses;
+    totalCourses.value = response.totalItems;
   } catch (error) {
-    console.error("获取课程列表失败:", error);
-    message.error("获取课程列表失败，请稍后重试");
+    console.error('获取课程列表失败:', error);
+    message.error('获取课程列表失败，请稍后重试');
   } finally {
     loading.value = false;
   }
@@ -418,14 +420,10 @@ function debounce(fn, delay) {
 }
 
 // 修改 filteredCourses computed 属性
-const filteredCourses = computed(() => {
-  return allCourses.value;
-});
+const filteredCourses = ref([]);
 
 // 修改 totalCourses computed 属性
-const totalCourses = computed(() => {
-  return pagination.total || 0;
-});
+const totalCourses = ref(0);
 
 // 页面变化处理
 const handlePageChange = (page, pageSize) => {
@@ -465,7 +463,7 @@ const handleBookCourse = (course) => {
 };
 
 // 用户角色（实际项目中应从用户状态或vuex中获取）
-const userRole = ref("teacher"); // 临时写死为teacher便于测试
+const userRole = ref(localStorage.getItem("userRole").toLowerCase()); // 临时写死为teacher便于测试
 
 // 发布课程相关
 const publishModalVisible = ref(false);
@@ -675,6 +673,23 @@ const handleDeleteCourse = async (id) => {
   }
 };
 
+// 修改页面标题和描述
+const getHeaderContent = () => {
+  if (userRole.value === 'teacher') {
+    return {
+      title: '我的课程',
+      description: '管理您发布的课程'
+    };
+  }
+  return {
+    title: '浏览课程',
+    description: '探索各类优质课程，找到适合您的学习方案'
+  };
+};
+
+// 在模板中使用
+const headerContent = computed(() => getHeaderContent());
+
 // 页面加载时的处理
 onMounted(() => {
   fetchCourses();
@@ -721,6 +736,7 @@ onMounted(() => {
 
   .course-list-content {
     width: 100%;
+    min-height: 400px;  // 添加最小高度，避免加载时页面跳动
 
     .course-card {
       height: 100%;
