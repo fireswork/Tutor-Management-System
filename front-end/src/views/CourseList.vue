@@ -49,20 +49,6 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-
-        <a-form-item>
-          <a-select
-            v-model:value="filterForm.level"
-            style="width: 120px"
-            placeholder="课程难度"
-            allowClear
-            @change="handleFilterChange"
-          >
-            <a-select-option value="初级">初级</a-select-option>
-            <a-select-option value="中级">中级</a-select-option>
-            <a-select-option value="高级">高级</a-select-option>
-          </a-select>
-        </a-form-item>
       </a-form>
     </div>
 
@@ -95,7 +81,6 @@
                 <div class="course-info">
                   <div class="course-tags">
                     <a-tag color="blue">{{ course.category }}</a-tag>
-                    <a-tag color="green">{{ course.level }}</a-tag>
                     <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
                     <div class="course-status">
                       <a-tag
@@ -222,17 +207,6 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item label="课程难度" name="level" required>
-          <a-select
-            v-model:value="publishForm.level"
-            placeholder="请选择课程难度"
-          >
-            <a-select-option value="初级">初级</a-select-option>
-            <a-select-option value="中级">中级</a-select-option>
-            <a-select-option value="高级">高级</a-select-option>
-          </a-select>
-        </a-form-item>
-
         <a-form-item label="课时时长(分钟)" name="duration" required>
           <a-input-number
             v-model:value="publishForm.duration"
@@ -299,7 +273,6 @@ const router = useRouter();
 // 筛选表单数据
 const filterForm = reactive({
   category: undefined,
-  level: undefined,
   keyword: "",
 });
 
@@ -335,7 +308,6 @@ const allCourses = ref([
     teacherName: "张老师",
     teacherId: 1,
     category: "数学",
-    level: "高级",
     price: 200,
     duration: 90,
     rating: 4.8,
@@ -350,7 +322,6 @@ const allCourses = ref([
     teacherName: "李老师",
     teacherId: 2,
     category: "英语",
-    level: "中级",
     price: 180,
     duration: 60,
     rating: 4.9,
@@ -365,7 +336,6 @@ const allCourses = ref([
     teacherName: "王老师",
     teacherId: 3,
     category: "物理",
-    level: "中级",
     price: 220,
     duration: 90,
     rating: 4.7,
@@ -379,7 +349,6 @@ const allCourses = ref([
     teacherName: "赵老师",
     teacherId: 4,
     category: "化学",
-    level: "高级",
     price: 190,
     duration: 120,
     rating: 4.6,
@@ -393,7 +362,6 @@ const allCourses = ref([
     teacherName: "钱老师",
     teacherId: 5,
     category: "语文",
-    level: "初级",
     price: 160,
     duration: 90,
     rating: 4.9,
@@ -407,7 +375,6 @@ const allCourses = ref([
     teacherName: "孙老师",
     teacherId: 6,
     category: "历史",
-    level: "中级",
     price: 150,
     duration: 90,
     rating: 4.5,
@@ -421,7 +388,6 @@ const allCourses = ref([
     teacherName: "周老师",
     teacherId: 7,
     category: "生物",
-    level: "高级",
     price: 240,
     duration: 120,
     rating: 4.7,
@@ -435,7 +401,6 @@ const allCourses = ref([
     teacherName: "吴老师",
     teacherId: 8,
     category: "地理",
-    level: "中级",
     price: 170,
     duration: 90,
     rating: 4.6,
@@ -449,7 +414,6 @@ const allCourses = ref([
     teacherName: "郑老师",
     teacherId: 9,
     category: "政治",
-    level: "高级",
     price: 180,
     duration: 90,
     rating: 4.8,
@@ -463,7 +427,6 @@ const allCourses = ref([
     teacherName: "冯老师",
     teacherId: 10,
     category: "数学",
-    level: "高级",
     price: 250,
     duration: 120,
     rating: 4.9,
@@ -477,7 +440,6 @@ const allCourses = ref([
     teacherName: "陈老师",
     teacherId: 11,
     category: "英语",
-    level: "高级",
     price: 220,
     duration: 90,
     rating: 4.7,
@@ -491,7 +453,6 @@ const allCourses = ref([
     teacherName: "楚老师",
     teacherId: 12,
     category: "音乐",
-    level: "初级",
     price: 280,
     duration: 60,
     rating: 5.0,
@@ -505,7 +466,6 @@ const allCourses = ref([
     teacherName: "张老师",
     teacherId: 1,
     category: "数学",
-    level: "初级",
     price: 180,
     duration: 90,
     rating: 4.8,
@@ -519,7 +479,6 @@ const allCourses = ref([
     teacherName: "李老师",
     teacherId: 2,
     category: "英语",
-    level: "中级",
     price: 160,
     duration: 90,
     rating: 4.7,
@@ -533,7 +492,6 @@ const allCourses = ref([
     teacherName: "赵老师",
     teacherId: 4,
     category: "化学",
-    level: "高级",
     price: 200,
     duration: 90,
     rating: 4.8,
@@ -547,7 +505,6 @@ const allCourses = ref([
     teacherName: "钱老师",
     teacherId: 5,
     category: "语文",
-    level: "初级",
     price: 140,
     duration: 60,
     rating: 4.9,
@@ -588,10 +545,6 @@ const filteredCourses = computed(() => {
     result = result.filter((course) => course.category === filterForm.category);
   }
 
-  if (filterForm.level) {
-    result = result.filter((course) => course.level === filterForm.level);
-  }
-
   if (filterForm.keyword) {
     const keyword = filterForm.keyword.toLowerCase();
     result = result.filter(
@@ -615,10 +568,6 @@ const totalCourses = computed(() => {
 
   if (filterForm.category) {
     result = result.filter((course) => course.category === filterForm.category);
-  }
-
-  if (filterForm.level) {
-    result = result.filter((course) => course.level === filterForm.level);
   }
 
   if (filterForm.keyword) {
@@ -683,7 +632,6 @@ const previewImage = ref("");
 const publishForm = reactive({
   title: "",
   category: undefined,
-  level: undefined,
   duration: 60,
   price: 0,
   description: "",
@@ -693,7 +641,6 @@ const publishForm = reactive({
 const publishRules = {
   title: [{ required: true, message: "请输入课程名称" }],
   category: [{ required: true, message: "请选择课程分类" }],
-  level: [{ required: true, message: "请选择课程难度" }],
   duration: [{ required: true, message: "请输入课时时长" }],
   price: [{ required: true, message: "请输入课时价格" }],
   description: [{ required: true, message: "请输入课程简介" }],
