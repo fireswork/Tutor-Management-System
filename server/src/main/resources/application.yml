@@ -16,3 +16,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true 
+
+# 添加日志配置
+logging:
+  level:
+    com.tutor: DEBUG
+    com.tutor.config.JwtAuthenticationFilter: DEBUG
+    org.springframework.security: DEBUG 

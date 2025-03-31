@@ -101,15 +101,19 @@ const rules = {
 const onFinish = async (values) => {
   loading.value = true
   try {
+    console.log('Sending login request with:', values);
     const response = await api.login({
       username: values.username,
       password: values.password
     })
     
+    console.log('Login response:', response);
+    
     // 保存用户信息
     localStorage.setItem('userId', response.id)
     localStorage.setItem('userName', response.username)
     localStorage.setItem('userRole', response.role)
+    // 确保token被正确保存
     localStorage.setItem('token', response.token)
     // 根据角色判断是否为教师
     localStorage.setItem('isTeacher', (response.role === 'TEACHER').toString())

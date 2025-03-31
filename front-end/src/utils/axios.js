@@ -33,6 +33,7 @@ instance.interceptors.response.use(
   },
   error => {
     if (error.response) {
+      console.log(error.response)
       switch (error.response.status) {
         case 400:
           message.error(error.response.data.message || '请求参数错误')
@@ -44,7 +45,8 @@ instance.interceptors.response.use(
           message.error('请重新登录')
           break
         case 403:
-          message.error('没有权限访问')
+          message.error('请登录后访问')
+          router.push('/login')
           break
         case 404:
           message.error('请求的资源不存在')
@@ -66,6 +68,12 @@ instance.interceptors.response.use(
 export const api = {
   login: (data) => instance.post('/users/login', data),
   register: (data) => instance.post('/users/register', data),
+  
+  // 用户资料相关接口 - 注意这里直接使用了/user/profile，因为baseURL已经包含了/api
+  getUserProfile: () => instance.get('/user/profile'),
+  updateUserProfile: (data) => instance.put('/user/profile', data),
+  changePassword: (data) => instance.post('/user/profile/change-password', data),
+  
   // 可以继续添加其他API请求方法
 }
 

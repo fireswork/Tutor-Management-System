@@ -12,7 +12,7 @@
           {{ userInfo.username }}
         </a-descriptions-item>
         <a-descriptions-item label="用户角色" span="3">
-          {{ userInfo.role === 'teacher' ? '教师' : '学生' }}
+          {{ userInfo.role === 'TEACHER' ? '教师' : userInfo.role === 'ADMIN' ? '管理员' : '用户' }}
         </a-descriptions-item>
         <a-descriptions-item label="注册时间" span="3">
           {{ userInfo.registerTime }}
@@ -107,27 +107,28 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { message } from "ant-design-vue";
+import { api } from "../../utils/axios";
 
 const editMode = ref(false);
 const passwordModalVisible = ref(false);
 const passwordLoading = ref(false);
+const loading = ref(false);
 
 // 用户信息
 const userInfo = reactive({
-  username: "zhang_student",
-  realName: "张三",
-  email: "zhang@example.com",
-  phone: "13800138000",
-  role: "teacher", // 可以通过localStorage获取
-  registerTime: "2023-06-15",
+  username: "",
+  realName: "",
+  email: "",
+  phone: "",
+  role: "",
+  registerTime: "",
 });
 
 // 修改信息表单
 const editForm = reactive({
-  username: userInfo.username,
-  realName: userInfo.realName,
-  email: userInfo.email,
-  phone: userInfo.phone,
+  realName: "",
+  email: "",
+  phone: "",
 });
 
 // 修改密码表单
@@ -145,16 +146,52 @@ const validateConfirmPassword = async (rule, value) => {
   return Promise.resolve();
 };
 
-// 保存用户信息
-const saveUserInfo = () => {
-  // 实际项目中应该发送请求到后端保存数据
-  // 这里仅模拟更新本地数据
-  userInfo.realName = editForm.realName;
-  userInfo.email = editForm.email;
-  userInfo.phone = editForm.phone;
+// 获取用户个人资料
+const fetchUserProfile = async () => {
+  loading.value = true;
+  try {
+    const data = await api.getUserProfile();
+    
+    userInfo.username = data.username;
+    userInfo.realName = data.realName || '';
+    userInfo.email = data.email || '';
+    userInfo.phone = data.phone || '';
+    userInfo.role = data.role;
+    userInfo.registerTime = data.registerTime ? new Date(data.registerTime).toLocaleDateString() : '';
+    
+    // 初始化编辑表单数据
+    editForm.realName = userInfo.realName;
+    editForm.email = userInfo.email;
+    editForm.phone = userInfo.phone;
+  } catch (error) {
+    console.error('Failed to fetch user profile:', error);
+  } finally {
+    loading.value = false;
+  }
+};
 
-  message.success("个人信息修改成功");
-  editMode.value = false;
+// 保存用户信息
+const saveUserInfo = async () => {
+  loading.value = true;
+  try {
+    const data = await api.updateUserProfile({
+      realName: editForm.realName,
+      email: editForm.email,
+      phone: editForm.phone
+    });
+    
+    // 更新本地数据
+    userInfo.realName = data.realName;
+    userInfo.email = data.email;
+    userInfo.phone = data.phone;
+
+    message.success("个人信息修改成功");
+    editMode.value = false;
+  } catch (error) {
+    console.error('Failed to update user profile:', error);
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 取消编辑
@@ -177,7 +214,7 @@ const showPasswordModal = () => {
 };
 
 // 修改密码
-const changePassword = () => {
+const changePassword = async () => {
   // 表单验证
   if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
     message.error('请填写完整密码信息');
@@ -191,31 +228,24 @@ const changePassword = () => {
   
   passwordLoading.value = true;
   
-  // 实际项目中应该发送请求到后端验证并修改密码
-  setTimeout(() => {
-    passwordLoading.value = false;
+  try {
+    await api.changePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
+    });
+    
     passwordModalVisible.value = false;
     message.success('密码修改成功');
-  }, 1000);
+  } catch (error) {
+    console.error('Failed to change password:', error);
+  } finally {
+    passwordLoading.value = false;
+  }
 };
 
 onMounted(() => {
-  // 实际项目中可能需要从API获取用户数据
-  // 也可以从localStorage获取部分用户信息
-  const storedUserName = localStorage.getItem("userName");
-  const storedUserRole =
-    localStorage.getItem("userRole") ||
-    localStorage.getItem("isTeacher") === "true"
-      ? "teacher"
-      : "student";
-
-  if (storedUserName) {
-    userInfo.username = storedUserName;
-  }
-
-  if (storedUserRole) {
-    userInfo.role = storedUserRole;
-  }
+  // 获取用户个人资料
+  fetchUserProfile();
 });
 </script>
 

@@ -1,6 +1,7 @@
 package com.tutor.config;
 
 import com.tutor.utils.JwtUtil;
+import com.tutor.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,12 +25,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserDetailsService userDetailsService;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        final String requestURI = request.getRequestURI();
         final String authorizationHeader = request.getHeader("Authorization");
+
+        logger.debug("Processing request: " + requestURI);
+        logger.debug("Authorization header: " + (authorizationHeader != null ? "present" : "not present"));
 
         String username = null;
         String jwt = null;
@@ -38,21 +46,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwt = authorizationHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwt);
+                logger.debug("Extracted username from token: " + username);
             } catch (Exception e) {
                 logger.error("JWT token is invalid: " + e.getMessage());
             }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            logger.debug("Loading user details for: " + username);
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            try {
+                if (jwtUtil.validateToken(jwt, userDetails)) {
+                    logger.debug("Token validated successfully for user: " + username);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    
+                    userRepository.findByUsername(username).ifPresent(user -> {
+                        logger.debug("Setting user ID in authentication details: " + user.getId());
+                        authentication.setDetails(user.getId().toString());
+                    });
+                    
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.debug("Authentication set in SecurityContext");
+                } else {
+                    logger.warn("Token validation failed for user: " + username);
+                }
+            } catch (Exception e) {
+                logger.error("Error validating token: " + e.getMessage(), e);
             }
         }
+        
         chain.doFilter(request, response);
     }
 } 
