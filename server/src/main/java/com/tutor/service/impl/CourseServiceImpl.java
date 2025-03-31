@@ -51,7 +51,7 @@ public class CourseServiceImpl implements CourseService {
     @Transactional
     public CourseDTO createCourse(CourseCreateDTO courseCreateDTO, Long teacherId) {
         User teacher = userRepository.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new RuntimeException("未找到教师"));
         
         Course course = Course.builder()
                 .title(courseCreateDTO.getTitle())
@@ -75,7 +75,7 @@ public class CourseServiceImpl implements CourseService {
         
         // 验证是否是课程的教师
         if (!course.getTeacher().getId().equals(teacherId)) {
-            throw new RuntimeException("You are not authorized to delete this course");
+            throw new RuntimeException("您无权删除该课程");
         }
         
         courseRepository.deleteById(id);
@@ -89,7 +89,7 @@ public class CourseServiceImpl implements CourseService {
         
         // 验证是否是课程的教师
         if (!course.getTeacher().getId().equals(teacherId)) {
-            throw new RuntimeException("You are not authorized to update this course");
+            throw new RuntimeException("您无权更新该课程");
         }
         
         // 更新课程信息

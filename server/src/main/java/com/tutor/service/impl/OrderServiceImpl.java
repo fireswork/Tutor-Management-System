@@ -57,7 +57,7 @@ public class OrderServiceImpl implements OrderService {
         // 检查是否已有未取消的订单
         boolean hasActiveOrder = orderRepository.existsByStudentAndCourseAndStatusNot(student, course, "cancelled");
         if (hasActiveOrder) {
-            throw new IllegalStateException("You already have an active order for this course");
+            throw new IllegalStateException("您已经有该课程的有效订单");
         }
         
         // 创建订单
@@ -85,7 +85,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         
         if (!order.getStudent().getId().equals(userId) && !order.getCourse().getTeacher().getId().equals(userId)) {
-            throw new IllegalStateException("You don't have permission to view this order");
+            throw new IllegalStateException("您没有权限查看该订单");
         }
         
         // 检查是否有评价
@@ -169,12 +169,12 @@ public class OrderServiceImpl implements OrderService {
         
         // 验证学生身份
         if (!order.getStudent().getId().equals(studentId)) {
-            throw new IllegalStateException("You don't have permission to pay this order");
+            throw new IllegalStateException("您没有权限支付该订单");
         }
         
         // 验证订单状态
         if (!"pending".equals(order.getStatus())) {
-            throw new IllegalStateException("Order is not in pending status");
+            throw new IllegalStateException("订单不是待支付状态");
         }
         
         // 支付逻辑 (实际项目中应该对接支付平台)
@@ -201,15 +201,15 @@ public class OrderServiceImpl implements OrderService {
         boolean isTeacher = order.getCourse().getTeacher().getId().equals(userId);
         
         if (!isStudent && !isTeacher) {
-            throw new IllegalStateException("You don't have permission to cancel this order");
+            throw new IllegalStateException("您没有权限取消该订单");
         }
         
         if (isStudent && !"pending".equals(order.getStatus())) {
-            throw new IllegalStateException("Student can only cancel pending orders");
+            throw new IllegalStateException("学生只能取消待支付的订单");
         }
         
         if (isTeacher && !"paid".equals(order.getStatus())) {
-            throw new IllegalStateException("Teacher can only cancel paid orders");
+            throw new IllegalStateException("教师只能取消已支付的订单");
         }
         
         // 取消订单
@@ -230,12 +230,12 @@ public class OrderServiceImpl implements OrderService {
         
         // 验证教师身份
         if (!order.getCourse().getTeacher().getId().equals(teacherId)) {
-            throw new IllegalStateException("You don't have permission to complete this order");
+            throw new IllegalStateException("您没有权限完成该订单");
         }
         
         // 验证订单状态
         if (!"paid".equals(order.getStatus())) {
-            throw new IllegalStateException("Order is not in paid status");
+            throw new IllegalStateException("订单不是已支付状态");
         }
         
         // 完成订单

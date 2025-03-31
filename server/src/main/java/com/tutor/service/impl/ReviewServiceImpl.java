@@ -46,17 +46,17 @@ public class ReviewServiceImpl implements ReviewService {
         
         // 验证学生身份
         if (!order.getStudent().getId().equals(studentId)) {
-            throw new IllegalStateException("You don't have permission to review this order");
+            throw new IllegalStateException("您没有权限评价该订单");
         }
         
         // 验证订单状态
         if (!"completed".equals(order.getStatus())) {
-            throw new IllegalStateException("You can only review completed orders");
+            throw new IllegalStateException("您只能评价已完成的订单");
         }
         
         // 检查是否已经评价过
         if (reviewRepository.existsByOrder(order)) {
-            throw new IllegalStateException("You have already reviewed this order");
+            throw new IllegalStateException("您已经评价过该订单");
         }
         
         // 创建评价

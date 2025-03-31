@@ -34,17 +34,17 @@ public class UserService {
     public User register(UserDTO userDTO) {
         // 检查用户名是否已存在
         if (userRepository.existsByUsername(userDTO.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new RuntimeException("用户名已存在");
         }
         
         // 检查邮箱是否已存在
         if (userDTO.getEmail() != null && userRepository.existsByEmail(userDTO.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new RuntimeException("邮箱已存在");
         }
         
         // 检查手机号是否已存在
         if (userDTO.getPhone() != null && userRepository.existsByPhone(userDTO.getPhone())) {
-            throw new RuntimeException("Phone number already exists");
+            throw new RuntimeException("手机号已存在");
         }
 
         User user = new User();

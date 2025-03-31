@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class ResourceNotFoundException extends RuntimeException {
     
     public ResourceNotFoundException(String message) {
-        super(message);
+        super(message.replace("not found", "未找到").replace("with id:", "ID:"));
     }
 } 
