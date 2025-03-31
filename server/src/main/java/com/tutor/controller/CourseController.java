@@ -85,6 +85,16 @@ public class CourseController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<CourseDTO> updateCourse(
+            @PathVariable Long id,
+            @RequestBody CourseCreateDTO courseUpdateDTO) {
+        Long userId = getCurrentUserId();
+        CourseDTO updatedCourse = courseService.updateCourse(id, courseUpdateDTO, userId);
+        return ResponseEntity.ok(updatedCourse);
+    }
+
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getDetails() == null) {

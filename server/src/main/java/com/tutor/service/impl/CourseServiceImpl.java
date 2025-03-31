@@ -76,6 +76,31 @@ public class CourseServiceImpl implements CourseService {
         courseRepository.deleteById(id);
     }
     
+    @Override
+    @Transactional
+    public CourseDTO updateCourse(Long id, CourseCreateDTO courseUpdateDTO, Long teacherId) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+        
+        // 验证是否是课程的教师
+        if (!course.getTeacher().getId().equals(teacherId)) {
+            throw new RuntimeException("You are not authorized to update this course");
+        }
+        
+        // 更新课程信息
+        course.setTitle(courseUpdateDTO.getTitle());
+        course.setCategory(courseUpdateDTO.getCategory());
+        course.setDuration(courseUpdateDTO.getDuration());
+        course.setPrice(courseUpdateDTO.getPrice());
+        course.setDescription(courseUpdateDTO.getDescription());
+        if (courseUpdateDTO.getCover() != null) {
+            course.setCover(courseUpdateDTO.getCover());
+        }
+        
+        Course updatedCourse = courseRepository.save(course);
+        return convertToDTO(updatedCourse);
+    }
+    
     private CourseDTO convertToDTO(Course course) {
         return CourseDTO.builder()
                 .id(course.getId())

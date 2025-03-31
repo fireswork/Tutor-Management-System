@@ -30,7 +30,6 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
   response => {
-    console.log(response, 111)
     return response.data
   },
   error => {
@@ -100,6 +99,7 @@ export const api = {
   createCourse: (data) => instance.post('/courses', data),
   updateCourseStatus: (id, status) => instance.put(`/courses/${id}/status?status=${status}`),
   deleteCourse: (id) => instance.delete(`/courses/${id}`),
+  updateCourse: (id, data) => instance.put(`/courses/${id}`, data),
   
   // 可以继续添加其他API请求方法
 }

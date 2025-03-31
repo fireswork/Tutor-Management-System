@@ -95,12 +95,26 @@
             </a-card-meta>
 
             <template #actions>
-              <a-button type="link" @click="viewCourseDetail(course.id)">
-                查看详情
-              </a-button>
-              <a-button type="link" @click="handleBookCourse(course)">
-                立即预约
-              </a-button>
+              <!-- 教师只能看到自己课程的编辑和删除按钮 -->
+              <template v-if="userRole === 'teacher'">
+                <a-button type="link" @click="handleEditCourse(course)">
+                  <template #icon><EditOutlined /></template>
+                  编辑
+                </a-button>
+                <a-button type="link" danger @click="handleDeleteCourse(course)">
+                  <template #icon><DeleteOutlined /></template>
+                  删除
+                </a-button>
+              </template>
+              <!-- 非教师（学生）只能看到查看详情和预约按钮 -->
+              <template v-else>
+                <a-button type="link" @click="viewCourseDetail(course.id)">
+                  查看详情
+                </a-button>
+                <a-button type="link" @click="handleBookCourse(course)">
+                  立即预约
+                </a-button>
+              </template>
             </template>
           </a-card>
         </a-col>
@@ -211,6 +225,86 @@
     <a-modal v-model:visible="previewVisible" title="预览图片" :footer="null">
       <img alt="example" style="width: 100%" :src="previewImage" />
     </a-modal>
+
+    <!-- 添加编辑课程的Modal -->
+    <a-modal
+      v-model:visible="editModalVisible"
+      title="编辑课程"
+      :width="700"
+      @ok="handleUpdateCourse"
+      :confirmLoading="editLoading"
+    >
+      <a-form
+        :model="editForm"
+        :rules="publishRules"
+        ref="editFormRef"
+        layout="vertical"
+      >
+        <a-form-item label="课程名称" name="title" required>
+          <a-input
+            v-model:value="editForm.title"
+            placeholder="请输入课程名称"
+          />
+        </a-form-item>
+
+        <a-form-item label="课程分类" name="category" required>
+          <a-select
+            v-model:value="editForm.category"
+            placeholder="请选择课程分类"
+          >
+            <a-select-option
+              v-for="category in categories"
+              :key="category"
+              :value="category"
+            >
+              {{ category }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item label="课时时长(分钟)" name="duration" required>
+          <a-input-number
+            v-model:value="editForm.duration"
+            :min="30"
+            :max="180"
+            :step="15"
+            style="width: 100%"
+          />
+        </a-form-item>
+
+        <a-form-item label="课时价格(元)" name="price" required>
+          <a-input-number
+            v-model:value="editForm.price"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+          />
+        </a-form-item>
+
+        <a-form-item label="课程封面" name="cover">
+          <a-upload
+            v-model:file-list="coverFileList"
+            list-type="picture-card"
+            :before-upload="beforeUpload"
+            @preview="handlePreview"
+            :maxCount="1"
+          >
+            <div v-if="coverFileList.length < 1">
+              <plus-outlined />
+              <div style="margin-top: 8px">上传</div>
+            </div>
+          </a-upload>
+        </a-form-item>
+
+        <a-form-item label="课程简介" name="description" required>
+          <a-textarea
+            v-model:value="editForm.description"
+            :rows="4"
+            placeholder="请输入课程简介"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -221,6 +315,8 @@ import {
   PlusOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
 import { api } from "../utils/axios"; // 导入 API
@@ -232,6 +328,8 @@ const filterForm = reactive({
   category: undefined,
   keyword: "",
 });
+
+const editFormRef = ref(null);
 
 // 分页配置
 const pagination = reactive({
@@ -274,6 +372,7 @@ const fetchCourses = async () => {
     let response;
     if (userRole.value === 'teacher') {
       response = await api.getTeacherCourses(params);
+      console.log(response, 222222)
     } else {
       response = await api.getAllCourses(params);
     }
@@ -476,6 +575,105 @@ const getBase64 = (file) => {
     reader.readAsDataURL(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
+  });
+};
+
+// 添加编辑相关的状态
+const editModalVisible = ref(false);
+const editLoading = ref(false);
+const editForm = reactive({});
+const currentEditingCourse = ref(null);
+
+// 处理编辑按钮点击
+const handleEditCourse = (course) => {
+  currentEditingCourse.value = course;
+  Object.assign(editForm, {
+    title: course.title,
+    category: course.category,
+    duration: course.duration,
+    price: course.price,
+    description: course.description
+  });
+  coverFileList.value = [{
+    uid: '-1',
+    name: 'cover.png',
+    status: 'done',
+    url: course.cover
+  }];
+  editModalVisible.value = true;
+};
+
+// 处理更新课程
+const handleUpdateCourse = () => {
+  editFormRef.value.validate().then(async () => {
+    if (coverFileList.value.length === 0) {
+      message.error("请上传课程封面");
+      return;
+    }
+
+    editLoading.value = true;
+    
+    try {
+      // 处理图片上传
+      let coverUrl;
+      if (coverFileList.value[0].originFileObj) {
+        // 如果是新上传的文件，需要转换为base64
+        coverUrl = await getBase64(coverFileList.value[0].originFileObj);
+      } else {
+        // 如果已经有URL（可能是之前上传的）
+        coverUrl = coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
+      }
+      
+      if (!coverUrl) {
+        message.error("课程封面处理失败");
+        editLoading.value = false;
+        return;
+      }
+      
+      const courseData = {
+        ...editForm,
+        cover: coverUrl
+      };
+      
+      await api.updateCourse(currentEditingCourse.value.id, courseData);
+      
+      message.success("课程更新成功");
+      editModalVisible.value = false;
+      
+      // 重新获取课程列表
+      fetchCourses();
+      
+      // 重置表单
+      editFormRef.value.resetFields();
+      coverFileList.value = [];
+    } catch (error) {
+      console.error("更新课程失败:", error);
+      message.error("更新课程失败，请稍后重试");
+    } finally {
+      editLoading.value = false;
+    }
+  });
+};
+
+// 处理删除课程
+const handleDeleteCourse = (course) => {
+  a-modal.confirm({
+    title: '确认删除',
+    content: `确定要删除课程 "${course.title}" 吗？`,
+    okText: '确认',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await api.deleteCourse(course.id);
+        message.success('课程删除成功');
+        // 重新获取课程列表
+        fetchCourses();
+      } catch (error) {
+        console.error('删除课程失败:', error);
+        message.error('删除课程失败，请稍后重试');
+      }
+    },
   });
 };
 
