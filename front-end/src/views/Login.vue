@@ -24,15 +24,24 @@
         :rules="rules"
         @finish="onFinish"
         layout="vertical"
+        autocomplete="off"
       >
         <a-form-item name="username" label="用户名/邮箱">
-          <a-input v-model:value="formState.username" placeholder="请输入用户名或邮箱">
+          <a-input 
+            v-model:value="formState.username" 
+            placeholder="请输入用户名或邮箱"
+            autocomplete="off"
+          >
             <template #prefix><user-outlined /></template>
           </a-input>
         </a-form-item>
         
         <a-form-item name="password" label="密码">
-          <a-input-password v-model:value="formState.password" placeholder="请输入密码">
+          <a-input-password 
+            v-model:value="formState.password" 
+            placeholder="请输入密码"
+            autocomplete="new-password"
+          >
             <template #prefix><lock-outlined /></template>
           </a-input-password>
         </a-form-item>
@@ -63,6 +72,7 @@ import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
+import { api } from '../utils/axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -88,29 +98,35 @@ const rules = {
 }
 
 // 登录表单提交
-const onFinish = (values) => {
+const onFinish = async (values) => {
   loading.value = true
-  
-  // 模拟登录请求
-  setTimeout(() => {
-    // 模拟登录成功
-    localStorage.setItem('token', 'mock-token-xxx')
-    localStorage.setItem('userName', values.username)
+  try {
+    const response = await api.login({
+      username: values.username,
+      password: values.password
+    })
     
-    // 模拟用户角色，实际项目中应该从后端获取
-    const isTeacher = Math.random() > 0.5 // 随机决定是否为教师用户
-    localStorage.setItem('isTeacher', isTeacher.toString())
+    // 保存用户信息
+    localStorage.setItem('userId', response.id)
+    localStorage.setItem('userName', response.username)
+    localStorage.setItem('userRole', response.role)
+    // 根据角色判断是否为教师
+    localStorage.setItem('isTeacher', (response.role === 'TEACHER').toString())
     
-    loading.value = false
     message.success('登录成功')
     
-    // 如果有重定向，则跳转到重定向地址
+    // 处理重定向
     if (route.query.redirect) {
       router.push(route.query.redirect)
     } else {
       router.push({ name: 'TeacherList' })
     }
-  }, 1500)
+  } catch (error) {
+    // 错误处理已在axios拦截器中完成
+    console.error('Login failed:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 // 注册按钮点击
