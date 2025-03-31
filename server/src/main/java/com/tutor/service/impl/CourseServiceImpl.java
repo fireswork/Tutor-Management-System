@@ -69,10 +69,15 @@ public class CourseServiceImpl implements CourseService {
     
     @Override
     @Transactional
-    public void deleteCourse(Long id) {
-        if (!courseRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Course not found with id: " + id);
+    public void deleteCourse(Long id, Long teacherId) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+        
+        // 验证是否是课程的教师
+        if (!course.getTeacher().getId().equals(teacherId)) {
+            throw new RuntimeException("You are not authorized to delete this course");
         }
+        
         courseRepository.deleteById(id);
     }
     

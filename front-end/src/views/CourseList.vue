@@ -101,10 +101,17 @@
                   <template #icon><EditOutlined /></template>
                   编辑
                 </a-button>
-                <a-button type="link" danger @click="handleDeleteCourse(course)">
-                  <template #icon><DeleteOutlined /></template>
-                  删除
-                </a-button>
+                <a-popconfirm
+                  title="确定要删除这个课程吗？"
+                  ok-text="确定"
+                  cancel-text="取消"
+                  @confirm="handleDeleteCourse(course.id)"
+                >
+                  <a-button type="link" danger>
+                    <template #icon><DeleteOutlined /></template>
+                    删除
+                  </a-button>
+                </a-popconfirm>
               </template>
               <!-- 非教师（学生）只能看到查看详情和预约按钮 -->
               <template v-else>
@@ -656,25 +663,16 @@ const handleUpdateCourse = () => {
 };
 
 // 处理删除课程
-const handleDeleteCourse = (course) => {
-  a-modal.confirm({
-    title: '确认删除',
-    content: `确定要删除课程 "${course.title}" 吗？`,
-    okText: '确认',
-    okType: 'danger',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        await api.deleteCourse(course.id);
-        message.success('课程删除成功');
-        // 重新获取课程列表
-        fetchCourses();
-      } catch (error) {
-        console.error('删除课程失败:', error);
-        message.error('删除课程失败，请稍后重试');
-      }
-    },
-  });
+const handleDeleteCourse = async (id) => {
+  try {
+    await api.deleteCourse(id);
+    message.success('课程删除成功');
+    // 重新获取课程列表
+    fetchCourses();
+  } catch (error) {
+    console.error('删除课程失败:', error);
+    message.error('删除课程失败，请稍后重试');
+  }
 };
 
 // 页面加载时的处理
