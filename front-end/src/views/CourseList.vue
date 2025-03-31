@@ -226,7 +226,7 @@
           />
         </a-form-item>
 
-        <a-form-item label="课程封面" name="cover" required>
+        <a-form-item label="课程封面" name="cover">
           <a-upload
             v-model:file-list="coverFileList"
             list-type="picture-card"
@@ -471,7 +471,20 @@ const handlePublishCourse = () => {
     
     try {
       // 处理图片上传
-      const coverUrl = coverFileList.value[0].url || await getBase64(coverFileList.value[0].originFileObj);
+      let coverUrl;
+      if (coverFileList.value[0].originFileObj) {
+        // 如果是新上传的文件，需要转换为base64
+        coverUrl = await getBase64(coverFileList.value[0].originFileObj);
+      } else {
+        // 如果已经有URL（可能是之前上传的）
+        coverUrl = coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
+      }
+      
+      if (!coverUrl) {
+        message.error("课程封面处理失败");
+        publishLoading.value = false;
+        return;
+      }
       
       // 准备课程数据
       const courseData = {

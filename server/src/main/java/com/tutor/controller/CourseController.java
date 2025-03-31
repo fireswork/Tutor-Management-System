@@ -9,7 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -43,13 +44,14 @@ public class CourseController {
     @GetMapping("/teacher")
     @PreAuthorize("hasRole('TEACHER')")
     public ResponseEntity<Map<String, Object>> getTeacherCourses(
-            @AuthenticationPrincipal User user,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int size) {
         
-        Page<CourseDTO> coursePage = courseService.getTeacherCourses(user.getId(), category, keyword, page, size);
+        Long userId = getCurrentUserId();
+        
+        Page<CourseDTO> coursePage = courseService.getTeacherCourses(userId, category, keyword, page, size);
         
         Map<String, Object> response = new HashMap<>();
         response.put("courses", coursePage.getContent());
@@ -90,5 +92,13 @@ public class CourseController {
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getDetails() == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+        return Long.valueOf(authentication.getDetails().toString());
     }
 } 
