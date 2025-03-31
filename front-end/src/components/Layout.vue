@@ -92,10 +92,6 @@
               <template #icon><TeamOutlined /></template>
               <router-link to="/teachers">教师管理</router-link>
             </a-menu-item>
-            <a-menu-item key="subject-management">
-              <template #icon><ReadOutlined /></template>
-              <router-link to="/subjects">科目管理</router-link>
-            </a-menu-item>
 
             <template>
               <a-menu-item key="teacher-center">

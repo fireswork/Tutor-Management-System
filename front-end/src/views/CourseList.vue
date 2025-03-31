@@ -82,10 +82,12 @@
                   <div class="course-info">
                     <div class="course-tags">
                       <a-tag color="blue">{{ course.category }}</a-tag>
-                      <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
+                      <a-tag color="orange"
+                        >{{ course.duration }}分钟/课时</a-tag
+                      >
                     </div>
                     <div class="course-teacher">
-                      <span>教师：{{ course.teacherName || '-' }}</span>
+                      <span>教师：{{ course.teacherName || "-" }}</span>
                       <a-rate :value="course.rating" disabled allow-half />
                     </div>
                     <a-tooltip :title="course.description">
@@ -375,12 +377,12 @@ const fetchCourses = async () => {
       page: pagination.current - 1,
       size: pagination.pageSize,
       category: filterForm.category,
-      keyword: filterForm.keyword
+      keyword: filterForm.keyword,
     };
 
     let response;
     // 根据用户角色决定获取哪种课程列表
-    if (userRole.value === 'teacher') {
+    if (userRole.value === "teacher") {
       response = await api.getTeacherCourses(params);
     } else {
       // 普通用户获取所有课程
@@ -390,8 +392,8 @@ const fetchCourses = async () => {
     filteredCourses.value = response.courses;
     totalCourses.value = response.totalItems;
   } catch (error) {
-    console.error('获取课程列表失败:', error);
-    message.error('获取课程列表失败，请稍后重试');
+    console.error("获取课程列表失败:", error);
+    message.error("获取课程列表失败，请稍后重试");
   } finally {
     loading.value = false;
   }
@@ -448,7 +450,7 @@ const viewCourseDetail = (id) => {
 };
 
 // 预约课程
-const handleBookCourse = (course) => {
+const handleBookCourse = async (course) => {
   if (!localStorage.getItem("token")) {
     message.info("请先登录后再预约课程");
     router.push({
@@ -458,8 +460,13 @@ const handleBookCourse = (course) => {
     return;
   }
 
-  message.success(`即将为您预约课程: ${course.title}`);
-  // 实际项目中可以弹出预约表单或跳转到预约页面
+  const orderData = {
+    courseId: course.id,
+    bookingTime: new Date().toISOString(),
+  };
+
+  await api.createOrder(orderData);
+  message.success(`预约课程成功: ${course.title}，请去订单管理支付对应的订单`);
 };
 
 // 用户角色（实际项目中应从用户状态或vuex中获取）
@@ -528,7 +535,7 @@ const handlePublishCourse = () => {
     }
 
     publishLoading.value = true;
-    
+
     try {
       // 处理图片上传
       let coverUrl;
@@ -537,30 +544,31 @@ const handlePublishCourse = () => {
         coverUrl = await getBase64(coverFileList.value[0].originFileObj);
       } else {
         // 如果已经有URL（可能是之前上传的）
-        coverUrl = coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
+        coverUrl =
+          coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
       }
-      
+
       if (!coverUrl) {
         message.error("课程封面处理失败");
         publishLoading.value = false;
         return;
       }
-      
+
       // 准备课程数据
       const courseData = {
         ...publishForm,
-        cover: coverUrl
+        cover: coverUrl,
       };
-      
+
       // 发送创建课程请求
       const createdCourse = await api.createCourse(courseData);
-      
+
       message.success("课程发布成功");
       publishModalVisible.value = false;
-      
+
       // 重新获取课程列表
       fetchCourses();
-      
+
       // 重置表单
       publishFormRef.value.resetFields();
       coverFileList.value = [];
@@ -597,14 +605,16 @@ const handleEditCourse = (course) => {
     category: course.category,
     duration: course.duration,
     price: course.price,
-    description: course.description
+    description: course.description,
   });
-  coverFileList.value = [{
-    uid: '-1',
-    name: 'cover.png',
-    status: 'done',
-    url: course.cover
-  }];
+  coverFileList.value = [
+    {
+      uid: "-1",
+      name: "cover.png",
+      status: "done",
+      url: course.cover,
+    },
+  ];
   editModalVisible.value = true;
 };
 
@@ -617,7 +627,7 @@ const handleUpdateCourse = () => {
     }
 
     editLoading.value = true;
-    
+
     try {
       // 处理图片上传
       let coverUrl;
@@ -626,28 +636,29 @@ const handleUpdateCourse = () => {
         coverUrl = await getBase64(coverFileList.value[0].originFileObj);
       } else {
         // 如果已经有URL（可能是之前上传的）
-        coverUrl = coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
+        coverUrl =
+          coverFileList.value[0].url || coverFileList.value[0].thumbUrl;
       }
-      
+
       if (!coverUrl) {
         message.error("课程封面处理失败");
         editLoading.value = false;
         return;
       }
-      
+
       const courseData = {
         ...editForm,
-        cover: coverUrl
+        cover: coverUrl,
       };
-      
+
       await api.updateCourse(currentEditingCourse.value.id, courseData);
-      
+
       message.success("课程更新成功");
       editModalVisible.value = false;
-      
+
       // 重新获取课程列表
       fetchCourses();
-      
+
       // 重置表单
       editFormRef.value.resetFields();
       coverFileList.value = [];
@@ -664,26 +675,26 @@ const handleUpdateCourse = () => {
 const handleDeleteCourse = async (id) => {
   try {
     await api.deleteCourse(id);
-    message.success('课程删除成功');
+    message.success("课程删除成功");
     // 重新获取课程列表
     fetchCourses();
   } catch (error) {
-    console.error('删除课程失败:', error);
-    message.error('删除课程失败，请稍后重试');
+    console.error("删除课程失败:", error);
+    message.error("删除课程失败，请稍后重试");
   }
 };
 
 // 修改页面标题和描述
 const getHeaderContent = () => {
-  if (userRole.value === 'teacher') {
+  if (userRole.value === "teacher") {
     return {
-      title: '我的课程',
-      description: '管理您发布的课程'
+      title: "我的课程",
+      description: "管理您发布的课程",
     };
   }
   return {
-    title: '浏览课程',
-    description: '探索各类优质课程，找到适合您的学习方案'
+    title: "浏览课程",
+    description: "探索各类优质课程，找到适合您的学习方案",
   };
 };
 
@@ -736,7 +747,7 @@ onMounted(() => {
 
   .course-list-content {
     width: 100%;
-    min-height: 400px;  // 添加最小高度，避免加载时页面跳动
+    min-height: 400px; // 添加最小高度，避免加载时页面跳动
 
     .course-card {
       height: 100%;

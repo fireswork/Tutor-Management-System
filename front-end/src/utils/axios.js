@@ -102,7 +102,23 @@ export const api = {
   updateCourse: (id, data) => instance.put(`/courses/${id}`, data),
   getCourseDetail: (id) => instance.get(`/courses/${id}/detail`),
   
-  // 可以继续添加其他API请求方法
+  // 订单相关接口
+  createOrder: (data) => instance.post('/orders', data),
+  getOrderById: (id) => instance.get(`/orders/${id}`),
+  getStudentOrders: (params) => instance.get('/orders/student', { params }),
+  getTeacherOrders: (params) => instance.get('/orders/teacher', { params }),
+  payOrder: (id) => instance.post(`/orders/${id}/pay`),
+  cancelOrder: (id, reason) => instance.post(`/orders/${id}/cancel`, null, { params: { reason } }),
+  completeOrder: (id) => instance.post(`/orders/${id}/complete`),
+  
+  // 评价相关接口
+  createReview: (data) => instance.post('/reviews', data),
+  getReviewById: (id) => instance.get(`/reviews/${id}`),
+  getCourseReviews: (courseId, params) => instance.get(`/reviews/course/${courseId}`, { params }),
+  getStudentReviews: (params) => instance.get('/reviews/student', { params }),
+  getTeacherReviews: (params) => instance.get('/reviews/teacher', { params }),
+  getOrderReview: (orderId) => instance.get(`/reviews/order/${orderId}`),
+  hasOrderReview: (orderId) => instance.get(`/reviews/order/${orderId}/exists`)
 }
 
 export default instance
