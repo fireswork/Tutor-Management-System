@@ -46,10 +46,10 @@
           </a-input-password>
         </a-form-item>
         
-        <div class="login-options">
+        <!-- <div class="login-options">
           <a-checkbox v-model:checked="formState.remember">记住我</a-checkbox>
           <a href="#" class="forgot-password" @click.prevent="handleForgotPassword">忘记密码？</a>
-        </div>
+        </div> -->
         
         <a-form-item>
           <a-button type="primary" html-type="submit" :loading="loading" block>登录</a-button>
