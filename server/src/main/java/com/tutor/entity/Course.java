@@ -35,7 +35,7 @@ public class Course {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String cover;
     
     @Column(nullable = false)

@@ -70,9 +70,10 @@ public class CourseController {
     
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<?> createCourse(
-            @RequestBody CourseCreateDTO courseCreateDTO,
-            @RequestParam Long teacherId) {
+    public ResponseEntity<?> createCourse(@RequestBody CourseCreateDTO courseCreateDTO) {
+        // 从SecurityContext获取当前用户ID
+        Long teacherId = getCurrentUserId();
+        
         CourseDTO createdCourse = courseService.createCourse(courseCreateDTO, teacherId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdCourse);
     }
