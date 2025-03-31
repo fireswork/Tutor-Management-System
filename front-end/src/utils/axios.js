@@ -75,6 +75,13 @@ export const api = {
   updateUserProfile: (data) => instance.put('/user/profile', data),
   changePassword: (data) => instance.post('/user/profile/change-password', data),
   
+  // 管理员用户管理接口
+  getAllUsers: () => instance.get('/admin/users'),
+  getUserById: (id) => instance.get(`/admin/users/${id}`),
+  createUser: (data) => instance.post('/admin/users', data),
+  updateUser: (id, data) => instance.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => instance.delete(`/admin/users/${id}`),
+  
   // 资质管理相关接口
   getQualifications: () => instance.get('/user/qualifications'),
   getQualificationsByStatus: (status) => instance.get(`/user/qualifications/status/${status}`),

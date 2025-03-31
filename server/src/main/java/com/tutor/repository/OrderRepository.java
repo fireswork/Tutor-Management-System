@@ -44,4 +44,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // 检查是否存在待支付或已支付的订单
     @Query("SELECT COUNT(o) > 0 FROM Order o WHERE o.student = :student AND o.course = :course AND o.status IN ('pending', 'paid')")
     boolean existsActiveOrderByStudentAndCourse(@Param("student") User student, @Param("course") Course course);
+    
+    // 统计课程的相关订单数量
+    int countByCourse(Course course);
 } 

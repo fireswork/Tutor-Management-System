@@ -22,19 +22,6 @@
             allowClear
           />
         </a-form-item>
-        <a-form-item>
-          <a-select
-            v-model:value="searchForm.role"
-            style="width: 120px"
-            placeholder="用户角色"
-            allowClear
-            @change="handleSearch"
-          >
-            <a-select-option value="student">学生</a-select-option>
-            <a-select-option value="teacher">教师</a-select-option>
-            <a-select-option value="admin">管理员</a-select-option>
-          </a-select>
-        </a-form-item>
       </a-form>
     </div>
 
@@ -69,21 +56,14 @@
         :label-col="{ span: 6 }"
         :wrapper-col="{ span: 16 }"
       >
-        <a-form-item label="用户名" name="username">
-          <a-input v-model:value="formState.username" />
-        </a-form-item>
         <a-form-item label="邮箱" name="email">
           <a-input v-model:value="formState.email" />
         </a-form-item>
+        <a-form-item label="真实姓名" name="realName">
+          <a-input v-model:value="formState.realName" />
+        </a-form-item>
         <a-form-item label="手机号" name="phone">
           <a-input v-model:value="formState.phone" />
-        </a-form-item>
-        <a-form-item label="角色" name="role">
-          <a-select v-model:value="formState.role">
-            <a-select-option value="student">学生</a-select-option>
-            <a-select-option value="teacher">教师</a-select-option>
-            <a-select-option value="admin">管理员</a-select-option>
-          </a-select>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -93,44 +73,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { api } from '../../utils/axios'
 
 // 搜索表单数据
 const searchForm = ref({
-  username: '',
-  role: undefined
+  username: ''
 })
-
-// 模拟数据
-const mockUsers = [
-  {
-    id: 1,
-    username: '张三',
-    email: 'zhangsan@example.com',
-    phone: '13800138001',
-    role: 'student'
-  },
-  {
-    id: 2,
-    username: '李四',
-    email: 'lisi@example.com',
-    phone: '13800138002',
-    role: 'teacher'
-  },
-  {
-    id: 3,
-    username: '王五',
-    email: 'wangwu@example.com',
-    phone: '13800138003',
-    role: 'admin'
-  },
-  {
-    id: 4,
-    username: '赵六',
-    email: 'zhaoliu@example.com',
-    phone: '13800138004',
-    role: 'student'
-  }
-]
 
 // 表格列定义
 const columns = [
@@ -138,6 +86,11 @@ const columns = [
     title: '用户名',
     dataIndex: 'username',
     key: 'username',
+  },
+  {
+    title: '真实姓名',
+    dataIndex: 'realName',
+    key: 'realName',
   },
   {
     title: '邮箱',
@@ -148,19 +101,6 @@ const columns = [
     title: '手机号',
     dataIndex: 'phone',
     key: 'phone',
-  },
-  {
-    title: '角色',
-    dataIndex: 'role',
-    key: 'role',
-    customRender: ({ text }) => {
-      const roleMap = {
-        student: '学生',
-        teacher: '教师',
-        admin: '管理员'
-      }
-      return roleMap[text] || text
-    }
   },
   {
     title: '操作',
@@ -175,20 +115,32 @@ const modalVisible = ref(false)
 const modalTitle = ref('添加用户')
 const formRef = ref(null)
 const formState = ref({
-  username: '',
   email: '',
-  phone: '',
-  role: 'student',
+  realName: '',
+  phone: ''
 })
+
+// 表单验证规则
+const rules = {
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入有效的邮箱地址', trigger: 'blur' }
+  ],
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' }
+  ],
+  phone: [
+    { required: false, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码', trigger: 'blur' }
+  ]
+}
 
 // 筛选后的用户列表
 const filteredUserList = computed(() => {
   return userList.value.filter(user => {
     const usernameMatch = !searchForm.value.username || 
       user.username.toLowerCase().includes(searchForm.value.username.toLowerCase())
-    const roleMatch = !searchForm.value.role || 
-      user.role === searchForm.value.role
-    return usernameMatch && roleMatch
+    return usernameMatch
   })
 })
 
@@ -200,8 +152,7 @@ const handleSearch = () => {
 // 重置搜索
 const handleReset = () => {
   searchForm.value = {
-    username: '',
-    role: undefined
+    username: ''
   }
 }
 
@@ -209,10 +160,11 @@ const handleReset = () => {
 const fetchUserList = async () => {
   loading.value = true
   try {
-    // 使用模拟数据
-    userList.value = mockUsers
+    const response = await api.getAllUsers()
+    userList.value = response
   } catch (error) {
     message.error('获取用户列表失败')
+    console.error(error)
   } finally {
     loading.value = false
   }
@@ -222,10 +174,9 @@ const fetchUserList = async () => {
 const showAddModal = () => {
   modalTitle.value = '添加用户'
   formState.value = {
-    username: '',
     email: '',
-    phone: '',
-    role: 'student',
+    realName: '',
+    phone: ''
   }
   modalVisible.value = true
 }
@@ -240,12 +191,12 @@ const handleEdit = (record) => {
 // 删除用户
 const handleDelete = async (id) => {
   try {
-    // TODO: 调用后端API删除用户
-    await fetch(`/api/users/${id}`, { method: 'DELETE' })
+    await api.deleteUser(id)
     message.success('删除成功')
     fetchUserList()
   } catch (error) {
     message.error('删除失败')
+    console.error(error)
   }
 }
 
@@ -253,15 +204,13 @@ const handleDelete = async (id) => {
 const handleModalOk = async () => {
   try {
     await formRef.value.validate()
-    // TODO: 调用后端API保存用户
-    const method = modalTitle.value === '添加用户' ? 'POST' : 'PUT'
-    const url = modalTitle.value === '添加用户' ? '/api/users' : `/api/users/${formState.value.id}`
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formState.value),
-    })
-    message.success(`${modalTitle.value}成功`)
+    if (modalTitle.value === '添加用户') {
+      await api.createUser(formState.value)
+      message.success('添加用户成功')
+    } else {
+      await api.updateUser(formState.value.id, formState.value)
+      message.success('编辑用户成功')
+    }
     modalVisible.value = false
     fetchUserList()
   } catch (error) {

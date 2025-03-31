@@ -356,7 +356,6 @@ const handleDelete = async (id) => {
     fetchTeacherList()
   } catch (error) {
     console.error('删除教师失败:', error)
-    message.error(error.response?.data?.error || '删除失败')
   }
 }
 
@@ -387,7 +386,7 @@ const handleModalOk = async () => {
     if (isAdd) {
       // 添加教师
       await api.addTeacher(teacherData)
-      message.success('添加教师成功')
+      message.success('添加教师成功，用户名为邮箱地址，密码为123456，请妥善保存')
     } else {
       // 更新教师
       await api.updateTeacher(teacherData.id, teacherData)
@@ -404,7 +403,6 @@ const handleModalOk = async () => {
     } else {
       // API请求错误
       console.error(error)
-      message.error(error.response?.data?.error || `${modalTitle.value}失败`)
     }
   } finally {
     loading.value = false

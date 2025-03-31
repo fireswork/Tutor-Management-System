@@ -5,6 +5,7 @@ import com.tutor.dto.CourseDTO;
 import com.tutor.dto.QualificationDTO;
 import com.tutor.dto.TeacherQualificationsDTO;
 import com.tutor.entity.User;
+import com.tutor.exception.ResourceNotFoundException;
 import com.tutor.service.CourseService;
 import com.tutor.service.QualificationService;
 import com.tutor.service.TeacherService;
@@ -111,10 +112,27 @@ public class CourseController {
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
-        Long userId = getCurrentUserId();
-        courseService.deleteCourse(id, userId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
+        try {
+            Long userId = getCurrentUserId();
+            courseService.deleteCourse(id, userId);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "课程删除成功");
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        } catch (RuntimeException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "删除课程失败，请稍后再试");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @PutMapping("/{id}")

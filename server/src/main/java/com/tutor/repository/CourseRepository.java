@@ -1,6 +1,7 @@
 package com.tutor.repository;
 
 import com.tutor.entity.Course;
+import com.tutor.entity.Teacher;
 import com.tutor.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,4 +31,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
                                         @Param("category") String category, 
                                         @Param("keyword") String keyword, 
                                         Pageable pageable);
+                                        
+    @Query("SELECT COUNT(c) FROM Course c WHERE c.teacher.id IN (SELECT t.user.id FROM Teacher t WHERE t = :teacher)")
+    int countByTeacher(@Param("teacher") Teacher teacher);
 } 

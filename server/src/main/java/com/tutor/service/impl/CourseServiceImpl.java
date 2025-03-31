@@ -6,9 +6,12 @@ import com.tutor.entity.Course;
 import com.tutor.entity.User;
 import com.tutor.exception.ResourceNotFoundException;
 import com.tutor.repository.CourseRepository;
+import com.tutor.repository.OrderRepository;
+import com.tutor.repository.ReviewRepository;
 import com.tutor.repository.UserRepository;
 import com.tutor.service.CourseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +20,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class CourseServiceImpl implements CourseService {
     
-    private final CourseRepository courseRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private CourseRepository courseRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private OrderRepository orderRepository;
+    
+    @Autowired
+    private ReviewRepository reviewRepository;
     
     @Override
     public Page<CourseDTO> getAllCourses(String category, String keyword, int page, int size) {
@@ -76,6 +87,17 @@ public class CourseServiceImpl implements CourseService {
         // 验证是否是课程的教师
         if (!course.getTeacher().getId().equals(teacherId)) {
             throw new RuntimeException("您无权删除该课程");
+        }
+        
+        // 检查订单和评价
+        int orderCount = orderRepository.countByCourse(course);
+        if (orderCount > 0) {
+            throw new RuntimeException("该课程存在关联的订单，无法删除");
+        }
+        
+        int reviewCount = reviewRepository.countByCourse(course);
+        if (reviewCount > 0) {
+            throw new RuntimeException("该课程存在关联的评价，无法删除");
         }
         
         courseRepository.deleteById(id);

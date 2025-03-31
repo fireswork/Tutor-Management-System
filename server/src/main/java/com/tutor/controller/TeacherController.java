@@ -66,9 +66,13 @@ public class TeacherController {
         try {
             TeacherDTO savedTeacher = teacherService.addTeacher(teacherDTO);
             return ResponseEntity.ok(savedTeacher);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
             response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "添加教师失败，请稍后再试");
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -82,9 +86,13 @@ public class TeacherController {
         try {
             TeacherDTO updatedTeacher = teacherService.updateTeacher(id, teacherDTO);
             return ResponseEntity.ok(updatedTeacher);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
             response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "更新教师信息失败，请稍后再试");
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -98,11 +106,15 @@ public class TeacherController {
         try {
             teacherService.deleteTeacher(id);
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Teacher deleted successfully");
+            response.put("message", "教师删除成功");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
             response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "删除教师失败，该教师可能存在关联数据");
             return ResponseEntity.badRequest().body(response);
         }
     }

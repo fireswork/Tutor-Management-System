@@ -6,10 +6,13 @@ import com.tutor.dto.TeacherQualificationsDTO;
 import com.tutor.entity.Qualification;
 import com.tutor.entity.Teacher;
 import com.tutor.entity.User;
+import com.tutor.repository.CourseRepository;
 import com.tutor.repository.QualificationRepository;
+import com.tutor.repository.TeacherProfileRepository;
 import com.tutor.repository.TeacherRepository;
 import com.tutor.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +32,16 @@ public class TeacherService {
     private QualificationRepository qualificationRepository;
     
     @Autowired
+    private TeacherProfileRepository teacherProfileRepository;
+    
+    @Autowired
+    private CourseRepository courseRepository;
+    
+    @Autowired
     private QualificationService qualificationService;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     
     /**
      * 获取所有教师列表
@@ -63,10 +75,21 @@ public class TeacherService {
      */
     @Transactional
     public TeacherDTO addTeacher(TeacherDTO teacherDTO) {
+        // 检查邮箱是否已存在
+        if (userRepository.existsByEmail(teacherDTO.getEmail())) {
+            throw new RuntimeException("该邮箱已被注册，请使用其他邮箱");
+        }
+        
+        // 检查手机号是否已存在
+        if (teacherDTO.getPhone() != null && !teacherDTO.getPhone().isEmpty() && 
+            userRepository.existsByPhone(teacherDTO.getPhone())) {
+            throw new RuntimeException("该手机号已被注册，请使用其他手机号");
+        }
+        
         // 创建用户
         User user = new User();
         user.setUsername(teacherDTO.getEmail()); // 使用邮箱作为用户名
-        user.setPassword("password"); // 应该使用随机密码，并通过邮件发送给用户
+        user.setPassword(passwordEncoder.encode("123456")); // 对初始密码进行加密
         user.setRealName(teacherDTO.getName());
         user.setEmail(teacherDTO.getEmail());
         user.setPhone(teacherDTO.getPhone());
@@ -93,9 +116,27 @@ public class TeacherService {
     @Transactional
     public TeacherDTO updateTeacher(Long id, TeacherDTO teacherDTO) {
         Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new RuntimeException("未找到该教师信息"));
         
         User user = teacher.getUser();
+        
+        // 检查邮箱是否已被其他用户使用
+        if (!teacherDTO.getEmail().equals(user.getEmail())) {
+            Optional<User> existingUser = userRepository.findByEmail(teacherDTO.getEmail());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                throw new RuntimeException("该邮箱已被其他用户注册，请使用其他邮箱");
+            }
+        }
+        
+        // 检查手机号是否已被其他用户使用
+        if (teacherDTO.getPhone() != null && !teacherDTO.getPhone().isEmpty() && 
+            !teacherDTO.getPhone().equals(user.getPhone())) {
+            Optional<User> existingUser = userRepository.findByPhone(teacherDTO.getPhone());
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(user.getId())) {
+                throw new RuntimeException("该手机号已被其他用户注册，请使用其他手机号");
+            }
+        }
+        
         user.setRealName(teacherDTO.getName());
         user.setEmail(teacherDTO.getEmail());
         user.setPhone(teacherDTO.getPhone());
@@ -118,11 +159,34 @@ public class TeacherService {
     @Transactional
     public void deleteTeacher(Long id) {
         Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new RuntimeException("未找到该教师信息"));
         
-        // 先删除教师，再删除用户
-        teacherRepository.delete(teacher);
-        userRepository.delete(teacher.getUser());
+        User user = teacher.getUser();
+        
+        try {
+            // 1. 检查是否存在相关课程
+            int courseCount = courseRepository.countByTeacher(teacher);
+            if (courseCount > 0) {
+                throw new RuntimeException("该教师存在关联的课程，无法删除");
+            }
+            
+            // 2. 删除教师资料 (teacher_profiles)
+            teacherProfileRepository.deleteByUser(user);
+            
+            // 3. 删除教师资质 (qualifications)
+            qualificationRepository.deleteByUser(user);
+            
+            // 4. 删除教师记录
+            teacherRepository.delete(teacher);
+            
+            // 5. 最后删除用户记录
+            userRepository.delete(user);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw e;
+            }
+            throw new RuntimeException("删除教师失败，可能存在关联数据", e);
+        }
     }
     
     /**

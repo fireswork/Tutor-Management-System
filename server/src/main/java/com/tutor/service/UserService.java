@@ -14,6 +14,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -200,5 +202,131 @@ public class UserService {
         // 更新密码
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    /**
+     * 获取所有用户列表 (管理员功能)
+     */
+    public List<UserProfileDTO> getAllUsers() {
+        List<User> users = userRepository.findByRole(UserRole.USER);
+        return users.stream()
+                .map(this::convertToUserProfileDTO)
+                .toList();
+    }
+    
+    /**
+     * 创建新用户 (管理员功能)
+     */
+    @Transactional
+    public UserProfileDTO createUser(Map<String, String> userData) {
+        String email = userData.get("email");
+        String realName = userData.get("realName");
+        String phone = userData.get("phone");
+        
+        // 基本验证
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("邮箱不能为空");
+        }
+        
+        if (realName == null || realName.trim().isEmpty()) {
+            throw new RuntimeException("真实姓名不能为空");
+        }
+        
+        // 检查邮箱是否已存在
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("该邮箱已被注册");
+        }
+        
+        // 如果提供了手机号，检查是否已存在
+        if (phone != null && !phone.trim().isEmpty() && userRepository.existsByPhone(phone)) {
+            throw new RuntimeException("该手机号已被注册");
+        }
+        
+        // 创建新用户
+        User user = new User();
+        user.setUsername(email); // 使用邮箱作为用户名
+        user.setPassword(passwordEncoder.encode("123456")); // 初始密码设置为123456并加密
+        user.setEmail(email);
+        user.setRealName(realName);
+        user.setPhone(phone);
+        user.setRole(UserRole.USER); // 只能创建普通用户
+        
+        User savedUser = userRepository.save(user);
+        
+        return convertToUserProfileDTO(savedUser);
+    }
+    
+    /**
+     * 管理员更新用户信息
+     */
+    @Transactional
+    public UserProfileDTO updateUserByAdmin(Long userId, Map<String, String> userData) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("未找到该用户"));
+        
+        String email = userData.get("email");
+        String realName = userData.get("realName");
+        String phone = userData.get("phone");
+        
+        // 检查邮箱是否已被其他用户使用
+        if (email != null && !email.equals(user.getEmail())) {
+            Optional<User> existingUser = userRepository.findByEmail(email);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                throw new RuntimeException("该邮箱已被其他用户使用");
+            }
+            user.setEmail(email);
+            user.setUsername(email); // 同时更新用户名为邮箱
+        }
+        
+        // 更新真实姓名
+        if (realName != null) {
+            user.setRealName(realName);
+        }
+        
+        // 检查手机号是否已被其他用户使用
+        if (phone != null && !phone.equals(user.getPhone())) {
+            Optional<User> existingUser = userRepository.findByPhone(phone);
+            if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                throw new RuntimeException("该手机号已被其他用户使用");
+            }
+            user.setPhone(phone);
+        }
+        
+        User updatedUser = userRepository.save(user);
+        
+        return convertToUserProfileDTO(updatedUser);
+    }
+    
+    /**
+     * 删除用户 (管理员功能)
+     */
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("未找到该用户"));
+        
+        // 检查是否为管理员
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new RuntimeException("不能删除管理员账户");
+        }
+        
+        // TODO: 根据业务需求，可能需要检查用户是否有关联数据，如订单等
+        
+        userRepository.delete(user);
+    }
+    
+    /**
+     * 转换User实体为UserProfileDTO
+     */
+    private UserProfileDTO convertToUserProfileDTO(User user) {
+        UserProfileDTO dto = new UserProfileDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setRealName(user.getRealName());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setRole(user.getRole().toString());
+        dto.setRegisterTime(user.getCreateTime());
+        return dto;
     }
 } 

@@ -34,4 +34,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     // 检查订单是否已经评价
     boolean existsByOrder(Order order);
+    
+    // 统计课程评价数量
+    int countByCourse(Course course);
 } 
