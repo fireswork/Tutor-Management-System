@@ -50,29 +50,8 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public CourseDTO createCourse(CourseCreateDTO courseCreateDTO, Long teacherId) {
-        // 手动验证
-        if (courseCreateDTO.getTitle() == null || courseCreateDTO.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("课程标题不能为空");
-        }
-        
-        if (courseCreateDTO.getCategory() == null || courseCreateDTO.getCategory().trim().isEmpty()) {
-            throw new IllegalArgumentException("课程分类不能为空");
-        }
-        
-        if (courseCreateDTO.getDuration() == null || courseCreateDTO.getDuration() < 30) {
-            throw new IllegalArgumentException("课程时长不能小于30分钟");
-        }
-        
-        if (courseCreateDTO.getPrice() == null || courseCreateDTO.getPrice() < 0) {
-            throw new IllegalArgumentException("课程价格不能为负数");
-        }
-        
-        if (courseCreateDTO.getDescription() == null || courseCreateDTO.getDescription().trim().isEmpty()) {
-            throw new IllegalArgumentException("课程描述不能为空");
-        }
-        
         User teacher = userRepository.findById(teacherId)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with id: " + teacherId));
+                .orElseThrow(() -> new RuntimeException("Teacher not found"));
         
         Course course = Course.builder()
                 .title(courseCreateDTO.getTitle())
@@ -81,25 +60,11 @@ public class CourseServiceImpl implements CourseService {
                 .price(courseCreateDTO.getPrice())
                 .description(courseCreateDTO.getDescription())
                 .cover(courseCreateDTO.getCover())
-                .status("pending")
-                .rating(5.0)
-                .studentCount(0)
                 .teacher(teacher)
                 .build();
         
         Course savedCourse = courseRepository.save(course);
         return convertToDTO(savedCourse);
-    }
-    
-    @Override
-    @Transactional
-    public CourseDTO updateCourseStatus(Long id, String status) {
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
-        
-        course.setStatus(status);
-        Course updatedCourse = courseRepository.save(course);
-        return convertToDTO(updatedCourse);
     }
     
     @Override
@@ -120,11 +85,12 @@ public class CourseServiceImpl implements CourseService {
                 .price(course.getPrice())
                 .description(course.getDescription())
                 .cover(course.getCover())
-                .status(course.getStatus())
                 .rating(course.getRating())
                 .studentCount(course.getStudentCount())
                 .teacherId(course.getTeacher().getId())
                 .teacherName(course.getTeacher().getUsername())
+                .createdAt(course.getCreatedAt())
+                .updatedAt(course.getUpdatedAt())
                 .build();
     }
 } 

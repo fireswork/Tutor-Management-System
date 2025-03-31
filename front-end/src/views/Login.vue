@@ -68,11 +68,12 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { api } from '../utils/axios'
+
 
 const router = useRouter()
 const route = useRoute()
@@ -83,6 +84,10 @@ const formState = reactive({
   username: '',
   password: '',
   remember: false
+})
+
+onMounted(() => {
+  localStorage.removeItem('token')
 })
 
 // 表单验证规则

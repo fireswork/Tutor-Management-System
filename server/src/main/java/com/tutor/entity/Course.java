@@ -39,9 +39,6 @@ public class Course {
     private String cover;
     
     @Column(nullable = false)
-    private String status; // pending, approved, rejected
-    
-    @Column(nullable = false)
     private Double rating;
     
     @Column(nullable = false)
@@ -63,7 +60,6 @@ public class Course {
         updatedAt = LocalDateTime.now();
         if (rating == null) rating = 5.0;
         if (studentCount == null) studentCount = 0;
-        if (status == null) status = "pending";
     }
     
     @PreUpdate

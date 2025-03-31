@@ -82,25 +82,6 @@
                   <div class="course-tags">
                     <a-tag color="blue">{{ course.category }}</a-tag>
                     <a-tag color="orange">{{ course.duration }}分钟/课时</a-tag>
-                    <div class="course-status">
-                      <a-tag
-                        :color="
-                          course.status === 'pending'
-                            ? 'orange'
-                            : course.status === 'approved'
-                            ? 'green'
-                            : 'red'
-                        "
-                      >
-                        {{
-                          course.status === "pending"
-                            ? "待审核"
-                            : course.status === "approved"
-                            ? "已通过"
-                            : "已拒绝"
-                        }}
-                      </a-tag>
-                    </div>
                   </div>
                   <div class="course-teacher">
                     <span>教师：{{ course.teacherName }}</span>
@@ -114,37 +95,12 @@
             </a-card-meta>
 
             <template #actions>
-              <!-- 管理员操作按钮 -->
-              <template
-                v-if="userRole === 'admin' && course.status === 'pending'"
-              >
-                <a-button type="link" @click="handleAudit(course, 'approved')">
-                  <template #icon><CheckCircleOutlined /></template>
-                  通过
-                </a-button>
-                <a-button
-                  type="link"
-                  danger
-                  @click="handleAudit(course, 'rejected')"
-                >
-                  <template #icon><CloseCircleOutlined /></template>
-                  拒绝
-                </a-button>
-              </template>
-
-              <!-- 非管理员操作按钮 -->
-              <template v-else>
-                <a-button type="link" @click="viewCourseDetail(course.id)">
-                  查看详情
-                </a-button>
-                <a-button
-                  type="link"
-                  @click="handleBookCourse(course)"
-                  :disabled="course.status !== 'approved'"
-                >
-                  立即预约
-                </a-button>
-              </template>
+              <a-button type="link" @click="viewCourseDetail(course.id)">
+                查看详情
+              </a-button>
+              <a-button type="link" @click="handleBookCourse(course)">
+                立即预约
+              </a-button>
             </template>
           </a-card>
         </a-col>
@@ -521,34 +477,6 @@ const getBase64 = (file) => {
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
-};
-
-// 添加审核处理函数
-const handleAudit = async (course, status) => {
-  if (!localStorage.getItem("token")) {
-    message.info("请先登录");
-    router.push({
-      name: "Login",
-      query: { redirect: router.currentRoute.value.fullPath },
-    });
-    return;
-  }
-
-  try {
-    await api.updateCourseStatus(course.id, status);
-    
-    const action = status === "approved" ? "通过" : "拒绝";
-    message.success(`已${action}课程: ${course.title}`);
-    
-    // 更新本地课程状态
-    const targetCourse = allCourses.value.find((c) => c.id === course.id);
-    if (targetCourse) {
-      targetCourse.status = status;
-    }
-  } catch (error) {
-    console.error("审核课程失败:", error);
-    message.error("审核操作失败，请稍后重试");
-  }
 };
 
 // 页面加载时的处理

@@ -78,16 +78,6 @@ public class CourseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdCourse);
     }
     
-    @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CourseDTO> updateCourseStatus(
-            @PathVariable Long id,
-            @RequestParam String status) {
-        
-        CourseDTO updatedCourse = courseService.updateCourseStatus(id, status);
-        return ResponseEntity.ok(updatedCourse);
-    }
-    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
