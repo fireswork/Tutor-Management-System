@@ -33,7 +33,7 @@ public class QualificationService {
      */
     public List<QualificationDTO> getUserQualifications(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         return qualificationRepository.findByUserOrderByUploadTimeDesc(user)
                 .stream()
@@ -46,7 +46,7 @@ public class QualificationService {
      */
     public List<QualificationDTO> getUserQualificationsByStatus(Long userId, String status) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         return qualificationRepository.findByUserAndStatusOrderByUploadTimeDesc(user, status)
                 .stream()
@@ -60,7 +60,7 @@ public class QualificationService {
     @Transactional
     public QualificationDTO addQualification(Long userId, QualificationDTO qualificationDTO) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         Qualification qualification = new Qualification();
         qualification.setUser(user);
@@ -82,16 +82,16 @@ public class QualificationService {
     @Transactional
     public void deleteQualification(Long userId, Long qualificationId) {
         Qualification qualification = qualificationRepository.findById(qualificationId)
-                .orElseThrow(() -> new RuntimeException("Qualification not found"));
+                .orElseThrow(() -> new RuntimeException("资质未找到"));
         
         // 验证资质证书属于指定用户
         if (!qualification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("You don't have permission to delete this qualification");
+            throw new RuntimeException("你没有权限删除此资质证书");
         }
         
         // 只有待审核或被拒绝的资质可以删除
         if ("approved".equals(qualification.getStatus())) {
-            throw new RuntimeException("Cannot delete approved qualification");
+            throw new RuntimeException("无法删除已批准的资质证书");
         }
         
         qualificationRepository.delete(qualification);

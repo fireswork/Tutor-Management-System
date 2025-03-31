@@ -70,7 +70,7 @@ public class UserProfileController {
             String newPassword = passwordData.get("newPassword");
             
             if (currentPassword == null || newPassword == null) {
-                throw new RuntimeException("Current password and new password are required");
+                throw new RuntimeException("密码和确认密码不能为空");
             }
             
             // 从SecurityContext中获取当前用户ID
@@ -80,7 +80,7 @@ public class UserProfileController {
             userService.changePassword(userId, currentPassword, newPassword);
             
             Map<String, String> response = new HashMap<>();
-            response.put("message", "Password changed successfully");
+            response.put("message", "密码修改成功");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();

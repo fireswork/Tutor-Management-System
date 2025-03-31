@@ -92,7 +92,7 @@ public class QualificationController {
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getDetails() == null) {
-            throw new RuntimeException("User not authenticated");
+            throw new RuntimeException("用户未授权");
         }
         return Long.valueOf(authentication.getDetails().toString());
     }

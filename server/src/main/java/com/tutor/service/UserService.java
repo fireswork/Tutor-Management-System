@@ -102,10 +102,10 @@ public class UserService {
 
     public User login(String username, String password) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new RuntimeException("密码不正确");
         }
 
         return user;
@@ -127,7 +127,7 @@ public class UserService {
      */
     public UserProfileDTO getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         UserProfileDTO profileDTO = new UserProfileDTO();
         profileDTO.setId(user.getId());
@@ -147,13 +147,13 @@ public class UserService {
     @Transactional
     public UserProfileDTO updateUserProfile(Long userId, UserProfileDTO profileDTO) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         // 检查邮箱是否已被其他用户使用
         if (profileDTO.getEmail() != null && !profileDTO.getEmail().equals(user.getEmail())) {
             Optional<User> existingUser = userRepository.findByEmail(profileDTO.getEmail());
             if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
-                throw new RuntimeException("Email already in use");
+                throw new RuntimeException("邮箱已被使用");
             }
             user.setEmail(profileDTO.getEmail());
         }
@@ -162,7 +162,7 @@ public class UserService {
         if (profileDTO.getPhone() != null && !profileDTO.getPhone().equals(user.getPhone())) {
             Optional<User> existingUser = userRepository.findByPhone(profileDTO.getPhone());
             if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
-                throw new RuntimeException("Phone number already in use");
+                throw new RuntimeException("该手机号已被使用");
             }
             user.setPhone(profileDTO.getPhone());
         }
@@ -192,11 +192,11 @@ public class UserService {
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         // 验证当前密码是否正确
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new RuntimeException("当前密码不正确");
         }
         
         // 更新密码

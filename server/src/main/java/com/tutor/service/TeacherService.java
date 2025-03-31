@@ -66,7 +66,7 @@ public class TeacherService {
      */
     public TeacherDTO getTeacherById(Long id) {
         Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new RuntimeException("教师未找到"));
         return convertToDTO(teacher);
     }
     
@@ -194,7 +194,7 @@ public class TeacherService {
      */
     public TeacherQualificationsDTO getTeacherQualifications(Long teacherId) {
         Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                .orElseThrow(() -> new RuntimeException("教师未找到"));
         
         // 获取该教师的所有资质
         List<Qualification> qualifications = qualificationRepository.findByUser(teacher.getUser());
@@ -233,10 +233,10 @@ public class TeacherService {
      */
     public TeacherQualificationsDTO getTeacherQualificationsByUserId(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
         
         Teacher teacher = teacherRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Teacher not found for this user"));
+                .orElseThrow(() -> new RuntimeException("教师未找到"));
         
         return getTeacherQualifications(teacher.getId());
     }
