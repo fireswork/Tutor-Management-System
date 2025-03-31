@@ -388,6 +388,10 @@ onMounted(() => {
 <style lang="less" scoped>
 @import '../../assets/styles/variables.less';
 
+img {
+  width: 100%;
+}
+
 .user-qualifications-container {
   .description {
     margin-bottom: 20px;
