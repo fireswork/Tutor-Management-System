@@ -15,9 +15,7 @@
               <h1>{{ course?.title }}</h1>
               <div class="tags">
                 <a-tag color="blue">{{ course?.category }}</a-tag>
-                <a-tag color="green">{{ course?.level }}</a-tag>
                 <a-tag color="orange">{{ course?.duration }}分钟/课时</a-tag>
-                <a-tag color="purple">已报名 {{ course?.studentCount }} 人</a-tag>
               </div>
             </div>
             <div class="price-section">
@@ -42,7 +40,7 @@
                 <h3>{{ course?.teacherName }}</h3>
                 <a-rate :value="course?.rating" disabled allow-half />
               </div>
-              <p class="stats">教龄 {{ teacherYears }} 年 | 已授课 {{ teacherCourseCount }} 节</p>
+              <p class="stats">教龄 {{ teacherYears }} 年</p>
             </div>
           </div>
   
@@ -64,7 +62,7 @@
                   <div class="certificates">
                     <a-tag v-for="cert in teacherQualifications.certificates" 
                           :key="cert" 
-                          color="blue">{{ cert }}</a-tag>
+                          color="blue">{{ cert || '未上传' }}</a-tag>
                   </div>
                 </a-descriptions-item>
               </a-descriptions>
@@ -125,6 +123,7 @@
   import { ref, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { message } from 'ant-design-vue'
+  import { api } from '../utils/axios'
   import { 
     LeftOutlined, 
     CalendarOutlined 
@@ -133,22 +132,18 @@
   const route = useRoute()
   const router = useRouter()
   
-  // 模拟课程数据获取
+  // 课程数据
   const course = ref(null)
+  const teacherQualifications = ref({
+    education: '',
+    major: '',
+    certificates: []
+  })
   
   // 模拟教师相关数据
   const teacherAvatar = 'https://picsum.photos/200'
   const teacherYears = 5
   const teacherCourseCount = 1000
-  const teacherQualifications = {
-    education: '研究生学历',
-    major: '数学教育',
-    certificates: [
-      '高级教师资格证',
-      '心理咨询师证书',
-      '教育学硕士'
-    ]
-  }
   
   const teacherReviews = [
     {
@@ -181,6 +176,27 @@
     }
   ]
   
+  // 获取课程详情
+  const fetchCourseDetail = async (id) => {
+    try {
+      const response = await api.getCourseDetail(id)
+      course.value = response.course
+      
+      // 处理教师资质信息
+      const qualifications = response.teacherQualifications || []
+      teacherQualifications.value = {
+        education: qualifications.find(q => q.type === 'EDUCATION')?.title || '未填写',
+        major: qualifications.find(q => q.type === 'MAJOR')?.title || '未填写',
+        certificates: qualifications
+          .filter(q => q.type === 'CERTIFICATE')
+          .map(q => q.title)
+      }
+    } catch (error) {
+      console.error('获取课程详情失败:', error)
+      message.error('获取课程详情失败，请稍后重试')
+    }
+  }
+  
   // 处理预约课程
   const handleBookCourse = () => {
     if (!localStorage.getItem('token')) {
@@ -195,23 +211,9 @@
     message.success(`即将为您预约课程: ${course.value.title}`)
   }
   
-  onMounted(async () => {
+  onMounted(() => {
     const courseId = route.params.id
-    // 这里应该调用API获取课程详情
-    // 暂时使用模拟数据
-    course.value = {
-      id: courseId,
-      title: "高中数学强化班",
-      cover: "https://picsum.photos/1200/400",
-      teacherName: "张老师",
-      category: "数学",
-      level: "高级",
-      price: 200,
-      duration: 90,
-      rating: 4.8,
-      studentCount: 156,
-      description: "针对高考数学，从基础到难题逐步突破，提高解题能力和思维水平。课程采用循序渐进的教学方法，结合实际例题，帮助学生建立数学思维体系。",
-    }
+    fetchCourseDetail(courseId)
   })
   </script>
   

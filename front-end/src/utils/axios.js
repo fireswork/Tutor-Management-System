@@ -100,6 +100,7 @@ export const api = {
   updateCourseStatus: (id, status) => instance.put(`/courses/${id}/status?status=${status}`),
   deleteCourse: (id) => instance.delete(`/courses/${id}`),
   updateCourse: (id, data) => instance.put(`/courses/${id}`, data),
+  getCourseDetail: (id) => instance.get(`/courses/${id}/detail`),
   
   // 可以继续添加其他API请求方法
 }

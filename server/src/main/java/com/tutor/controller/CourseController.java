@@ -2,8 +2,10 @@ package com.tutor.controller;
 
 import com.tutor.dto.CourseCreateDTO;
 import com.tutor.dto.CourseDTO;
+import com.tutor.dto.QualificationDTO;
 import com.tutor.entity.User;
 import com.tutor.service.CourseService;
+import com.tutor.service.QualificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,6 +25,7 @@ import java.util.Map;
 public class CourseController {
     
     private final CourseService courseService;
+    private final QualificationService qualificationService;
     
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllCourses(
@@ -66,6 +70,22 @@ public class CourseController {
     public ResponseEntity<CourseDTO> getCourseById(@PathVariable Long id) {
         CourseDTO courseDTO = courseService.getCourseById(id);
         return ResponseEntity.ok(courseDTO);
+    }
+    
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<Map<String, Object>> getCourseDetail(@PathVariable Long id) {
+        // 获取课程基本信息
+        CourseDTO course = courseService.getCourseById(id);
+        
+        // 获取教师资质信息
+        List<QualificationDTO> qualifications = qualificationService.getUserQualifications(course.getTeacherId());
+        
+        // 组合返回数据
+        Map<String, Object> response = new HashMap<>();
+        response.put("course", course);
+        response.put("teacherQualifications", qualifications);
+        
+        return ResponseEntity.ok(response);
     }
     
     @PostMapping
