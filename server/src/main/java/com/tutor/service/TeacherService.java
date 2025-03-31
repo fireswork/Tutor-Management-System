@@ -137,6 +137,10 @@ public class TeacherService {
         dto.setTeacherId(teacher.getId());
         dto.setTeacherName(teacher.getUser().getRealName());
         
+        // 设置Teacher实体中的学历和专业字段
+        dto.setEducation(teacher.getEducation());
+        dto.setMajor(teacher.getMajor());
+        
         // 转换为DTO
         List<QualificationDTO> qualificationDTOs = qualifications.stream()
                 .map(q -> qualificationService.convertToDTO(q))
@@ -147,7 +151,28 @@ public class TeacherService {
         // 提取特定类型的资质信息
         extractQualificationInfo(dto, qualifications);
         
+        // 如果从资质中没有获取到学历和专业，则优先使用Teacher实体中的字段
+        if (dto.getEducation() == null) {
+            dto.setEducation(teacher.getEducation());
+        }
+        if (dto.getMajor() == null) {
+            dto.setMajor(teacher.getMajor());
+        }
+        
         return dto;
+    }
+    
+    /**
+     * 根据用户ID获取教师资质信息
+     */
+    public TeacherQualificationsDTO getTeacherQualificationsByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Teacher teacher = teacherRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Teacher not found for this user"));
+        
+        return getTeacherQualifications(teacher.getId());
     }
     
     /**

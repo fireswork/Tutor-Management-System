@@ -3,9 +3,11 @@ package com.tutor.controller;
 import com.tutor.dto.CourseCreateDTO;
 import com.tutor.dto.CourseDTO;
 import com.tutor.dto.QualificationDTO;
+import com.tutor.dto.TeacherQualificationsDTO;
 import com.tutor.entity.User;
 import com.tutor.service.CourseService;
 import com.tutor.service.QualificationService;
+import com.tutor.service.TeacherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ public class CourseController {
     
     private final CourseService courseService;
     private final QualificationService qualificationService;
+    private final TeacherService teacherService;
     
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllCourses(
@@ -74,16 +77,24 @@ public class CourseController {
     
     @GetMapping("/{id}/detail")
     public ResponseEntity<Map<String, Object>> getCourseDetail(@PathVariable Long id) {
-        // 获取课程基本信息
         CourseDTO course = courseService.getCourseById(id);
-        
+            
         // 获取教师资质信息
         List<QualificationDTO> qualifications = qualificationService.getUserQualifications(course.getTeacherId());
+        
+        // 获取教师学历和专业等详细资质信息 - 使用userId而不是teacherId
+        TeacherQualificationsDTO teacherQualifications = teacherService.getTeacherQualificationsByUserId(course.getTeacherId());
         
         // 组合返回数据
         Map<String, Object> response = new HashMap<>();
         response.put("course", course);
         response.put("teacherQualifications", qualifications);
+        
+        // 只返回教师的学历和专业信息
+        Map<String, String> teacherEduInfo = new HashMap<>();
+        teacherEduInfo.put("education", teacherQualifications.getEducation());
+        teacherEduInfo.put("major", teacherQualifications.getMajor());
+        response.put("teacherInfo", teacherEduInfo);
         
         return ResponseEntity.ok(response);
     }

@@ -53,16 +53,20 @@
                   <a-tag color="green">已认证</a-tag>
                 </a-descriptions-item>
                 <a-descriptions-item label="学历">
-                  {{ teacherQualifications.education }}
+                  {{ teacherInfo.education }}
                 </a-descriptions-item>
                 <a-descriptions-item label="专业">
-                  {{ teacherQualifications.major }}
+                  {{ teacherInfo.major }}
                 </a-descriptions-item>
                 <a-descriptions-item label="证书">
                   <div class="certificates">
                     <a-tag v-for="cert in teacherQualifications.certificates" 
                           :key="cert" 
                           color="blue">{{ cert || '未上传' }}</a-tag>
+                    <a-button type="link" size="small" @click="showQualificationsModal">
+                      <template #icon><EyeOutlined /></template>
+                      查看详情
+                    </a-button>
                   </div>
                 </a-descriptions-item>
               </a-descriptions>
@@ -96,6 +100,32 @@
           </a-list>
         </div>
   
+        <!-- 资质详情弹窗 -->
+        <a-modal
+          v-model:visible="qualificationsModalVisible"
+          title="教师资质详情"
+          width="700px"
+          :footer="null"
+        >
+          <div v-if="!teacherQualificationsData.length" class="empty-data">
+            <a-empty description="暂无资质数据" />
+          </div>
+          <div v-else class="qualifications-grid">
+            <a-card v-for="(qual, index) in teacherQualificationsData" :key="index" class="qualification-card">
+              <template #cover>
+                <div class="image-container">
+                  <img v-if="qual.fileUrl" :src="qual.fileUrl" :alt="qual.title" class="qualification-image" />
+                  <a-empty v-else description="暂无图片" />
+                </div>
+              </template>
+              <div class="card-extra-info">
+                <p>发证机构: {{ qual.issuer }}</p>
+                <p>状态: <a-tag :color="getStatusColor(qual.status)">{{ getStatusText(qual.status.toLowerCase()) }}</a-tag></p>
+              </div>
+            </a-card>
+          </div>
+        </a-modal>
+  
         <!-- 预约按钮 -->
         <div class="float-buttons">
           <a-float-button-group shape="circle" style="right: 24px">
@@ -126,7 +156,8 @@
   import { api } from '../utils/axios'
   import { 
     LeftOutlined, 
-    CalendarOutlined 
+    CalendarOutlined,
+    EyeOutlined
   } from '@ant-design/icons-vue'
   
   const route = useRoute()
@@ -139,11 +170,12 @@
     major: '',
     certificates: []
   })
+
+  const teacherInfo = ref({})
   
   // 模拟教师相关数据
   const teacherAvatar = 'https://picsum.photos/200'
   const teacherYears = 5
-  const teacherCourseCount = 1000
   
   const teacherReviews = [
     {
@@ -176,11 +208,44 @@
     }
   ]
   
+  // 资质详情弹窗
+  const qualificationsModalVisible = ref(false)
+  const teacherQualificationsData = ref([])
+  
+  // 显示资质详情弹窗
+  const showQualificationsModal = () => {
+    qualificationsModalVisible.value = true
+  }
+  
+  // 获取状态文本
+  const getStatusText = (status) => {
+    const statusMap = {
+      'pending': '待审核',
+      'approved': '已通过',
+      'rejected': '已拒绝'
+    }
+    return statusMap[status] || status
+  }
+  
+  // 获取状态颜色
+  const getStatusColor = (status) => {
+    const colorMap = {
+      'pending': 'orange',
+      'approved': 'green',
+      'rejected': 'red'
+    }
+    return colorMap[status] || 'default'
+  }
+  
   // 获取课程详情
   const fetchCourseDetail = async (id) => {
     try {
       const response = await api.getCourseDetail(id)
       course.value = response.course
+      teacherInfo.value = response.teacherInfo
+      
+      // 存储完整的教师资质数据，用于弹窗展示
+      teacherQualificationsData.value = response.teacherQualifications || []
       
       // 处理教师资质信息
       const qualifications = response.teacherQualifications || []
@@ -416,5 +481,43 @@
     right: 24px;
     bottom: 24px;
     z-index: 100;
+  }
+  
+  .qualifications-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    
+    .qualification-card {
+      margin-bottom: 16px;
+      
+      .image-container {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #f5f5f5;
+        
+        .qualification-image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+      
+      .card-extra-info {
+        margin-top: 12px;
+        
+        p {
+          margin-bottom: 4px;
+        }
+      }
+    }
+  }
+  
+  .empty-data {
+    padding: 40px 0;
+    text-align: center;
   }
   </style>
