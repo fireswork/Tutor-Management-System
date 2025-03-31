@@ -50,10 +50,10 @@
       <!-- 课程信息 -->
       <template #courseName="{ record }">
         <div class="course-info">
-          <img :src="record.course.cover" :alt="record.course.title" class="course-cover" />
+          <img :src="record.courseCover" alt="课程封面" class="course-cover" />
           <div class="course-detail">
-            <div class="course-title">{{ record.course.title }}</div>
-            <div class="course-teacher">教师：{{ record.course.teacherName }}</div>
+            <div class="course-title">{{ record.courseTitle }}</div>
+            <div class="course-teacher">教师：{{ record.teacherName }}</div>
           </div>
         </div>
       </template>
@@ -89,7 +89,7 @@
       <!-- 操作按钮 -->
       <template #action="{ record }">
         <!-- 学生操作 -->
-        <template v-if="userRole === 'student'">
+        <template v-if="userRole === 'user'">
           <a-space>
             <!-- 待支付状态可以支付或取消 -->
             <template v-if="record.status === 'pending'">
@@ -98,6 +98,12 @@
               </a-button>
               <a-button size="small" @click="handleCancel(record)">
                 取消预约
+              </a-button>
+            </template>
+            <!-- 已支付状态用户可以完成订单 -->
+            <template v-if="record.status === 'paid'">
+              <a-button type="primary" size="small" @click="handleComplete(record)">
+                完成订单
               </a-button>
             </template>
             <!-- 已完成状态且未评价可以评价 -->
@@ -112,6 +118,12 @@
         <!-- 教师操作 -->
         <template v-if="userRole === 'teacher'">
           <a-space>
+            <!-- 待支付状态教师可以取消 -->
+            <template v-if="record.status === 'pending'">
+              <a-button danger size="small" @click="handleCancel(record)">
+                取消预约
+              </a-button>
+            </template>
             <!-- 已支付状态可以完成或取消 -->
             <template v-if="record.status === 'paid'">
               <a-button type="primary" size="small" @click="handleComplete(record)">
@@ -176,9 +188,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { api } from '../utils/axios'
+import dayjs from 'dayjs'
 
 // 用户角色
-const userRole = ref('student') // 实际项目中从用户状态获取
+const userRole = ref(localStorage.getItem('userRole') ? localStorage.getItem('userRole').toLowerCase() : 'user')
 
 // 表格加载状态
 const loading = ref(false)
@@ -210,14 +224,15 @@ const getStatusText = (status) => orderStatus[status]?.text || '未知状态'
 const columns = [
   {
     title: '课程信息',
-    dataIndex: 'courseName',
+    dataIndex: 'course',
     key: 'courseName',
     slots: { customRender: 'courseName' }
   },
   {
     title: '预约时间',
     dataIndex: 'bookingTime',
-    key: 'bookingTime'
+    key: 'bookingTime',
+    customRender: ({text}) => text ? dayjs(text).format('YYYY-MM-DD HH:mm') : '-'
   },
   {
     title: '订单金额',
@@ -243,69 +258,96 @@ const columns = [
   }
 ]
 
-// 模拟订单数据
-const orders = ref([
-  {
-    id: 1,
-    course: {
-      title: '高中数学强化班',
-      cover: 'https://picsum.photos/100/100?random=1',
-      teacherName: '张老师'
-    },
-    bookingTime: '2024-03-15 14:30',
-    amount: 200,
-    status: 'pending',
-    hasReview: false
-  },
-  {
-    id: 2,
-    course: {
-      title: '英语口语提升课程',
-      cover: 'https://picsum.photos/100/100?random=2',
-      teacherName: '李老师'
-    },
-    bookingTime: '2024-03-14 10:00',
-    amount: 180,
-    status: 'paid',
-    hasReview: false
-  },
-  {
-    id: 3,
-    course: {
-      title: '物理概念强化班',
-      cover: 'https://picsum.photos/100/100?random=3',
-      teacherName: '王老师'
-    },
-    bookingTime: '2024-03-13 16:00',
-    amount: 220,
-    status: 'completed',
-    hasReview: false
+// 订单数据
+const orders = ref([])
+
+// 获取订单列表
+const fetchOrders = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: pagination.current - 1,
+      size: pagination.pageSize,
+      status: searchForm.status,
+      keyword: searchForm.keyword
+    }
+    
+    let response
+    if (userRole.value === 'teacher') {
+      response = await api.getTeacherOrders(params)
+    } else {
+      response = await api.getStudentOrders(params)
+    }
+    
+    orders.value = response.orders || []
+    pagination.total = response.totalItems || 0
+  } catch (error) {
+    console.error('获取订单列表失败:', error)
+    message.error('获取订单列表失败，请稍后重试')
+  } finally {
+    loading.value = false
   }
-])
+}
 
 // 表格变化处理
 const handleTableChange = (pag) => {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
-  // 实际项目中这里调用API重新获取数据
+  fetchOrders()
 }
 
-// 支付处理
-const handlePay = (record) => {
-  // 实际项目中跳转到支付页面或调用支付接口
-  message.success('正在跳转到支付页面...')
+// 支付订单 - 添加模拟支付功能
+const handlePay = async (record) => {
+  try {
+    // 显示支付确认对话框
+    const showPaymentDialog = () => {
+      return new Promise((resolve) => {
+        const modal = message.loading({
+          content: '订单支付处理中...',
+          duration: 0,
+        });
+        
+        // 3秒后自动关闭
+        setTimeout(() => {
+          modal();
+          resolve();
+        }, 3000);
+      });
+    };
+    
+    await showPaymentDialog();
+    await api.payOrder(record.id);
+    message.success('订单支付成功');
+    fetchOrders();
+  } catch (error) {
+    console.error('支付订单失败:', error);
+    message.error(error.response?.data?.message || '支付订单失败，请稍后重试');
+  }
 }
 
 // 取消订单
-const handleCancel = (record) => {
-  record.status = 'cancelled'
-  message.success('订单已取消')
+const handleCancel = async (record) => {
+  try {
+    const reason = ''  // 这里可以添加一个输入框让用户填写取消原因
+    await api.cancelOrder(record.id, reason)
+    message.success('订单已取消')
+    fetchOrders()
+  } catch (error) {
+    console.error('取消订单失败:', error)
+    message.error(error.response?.data?.message || '取消订单失败，请稍后重试')
+  }
 }
 
 // 完成订单
-const handleComplete = (record) => {
-  record.status = 'completed'
-  message.success('课程已完成')
+const handleComplete = async (record) => {
+  try {
+    await api.completeOrder(record.id)
+    message.success('课程已完成')
+    fetchOrders()
+  } catch (error) {
+    console.error('完成订单失败:', error)
+    message.error(error.response?.data?.message || '完成订单失败，请稍后重试')
+  }
 }
 
 // 评价相关
@@ -320,33 +362,36 @@ const reviewForm = reactive({
 // 打开评价弹窗
 const handleReview = (record) => {
   currentOrder.value = record
+  reviewForm.rating = 5
+  reviewForm.content = ''
   reviewModalVisible.value = true
 }
 
 // 提交评价
-const submitReview = () => {
+const submitReview = async () => {
   if (!reviewForm.content.trim()) {
     message.error('请填写评价内容')
     return
   }
 
   reviewLoading.value = true
-  // 模拟提交评价
-  setTimeout(() => {
-    if (currentOrder.value) {
-      currentOrder.value.hasReview = true
-      currentOrder.value.review = {
-        rating: reviewForm.rating,
-        content: reviewForm.content,
-        time: new Date().toLocaleString()
-      }
-      message.success('评价提交成功')
-      reviewModalVisible.value = false
-      reviewForm.content = ''
-      reviewForm.rating = 5
+  try {
+    const reviewData = {
+      orderId: currentOrder.value.id,
+      rating: reviewForm.rating,
+      content: reviewForm.content
     }
+    
+    await api.createReview(reviewData)
+    message.success('评价提交成功')
+    reviewModalVisible.value = false
+    fetchOrders()
+  } catch (error) {
+    console.error('提交评价失败:', error)
+    message.error(error.response?.data?.message || '提交评价失败，请稍后重试')
+  } finally {
     reviewLoading.value = false
-  }, 1000)
+  }
 }
 
 // 搜索表单
@@ -358,33 +403,34 @@ const searchForm = reactive({
 // 处理搜索
 const handleSearch = () => {
   pagination.current = 1
-  // 实际项目中这里调用API重新获取数据
-  // 模拟搜索过滤
-  const filteredOrders = orders.value.filter(order => {
-    const matchKeyword = searchForm.keyword ? 
-      (order.course.title.includes(searchForm.keyword) || 
-       order.course.teacherName.includes(searchForm.keyword)) : true
-    
-    const matchStatus = searchForm.status ? 
-      order.status === searchForm.status : true
-
-    return matchKeyword && matchStatus
-  })
-
-  orders.value = filteredOrders
+  fetchOrders()
 }
 
 // 评价查看相关
 const viewReviewModalVisible = ref(false)
 
 // 查看评价详情
-const viewReview = (record) => {
-  currentOrder.value = record
-  viewReviewModalVisible.value = true
+const viewReview = async (record) => {
+  try {
+    if (record.hasReview) {
+      const reviewData = await api.getOrderReview(record.id)
+      currentOrder.value = {
+        ...record,
+        review: {
+          ...reviewData,
+          time: new Date(reviewData.createdAt).toLocaleString()
+        }
+      }
+      viewReviewModalVisible.value = true
+    }
+  } catch (error) {
+    console.error('获取评价详情失败:', error)
+    message.error('获取评价详情失败，请稍后重试')
+  }
 }
 
 onMounted(() => {
-  // 实际项目中这里调用API获取订单列表
+  fetchOrders()
 })
 </script>
 
