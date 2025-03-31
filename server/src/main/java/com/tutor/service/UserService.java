@@ -1,8 +1,10 @@
 package com.tutor.service;
 
 import com.tutor.dto.UserDTO;
+import com.tutor.entity.TeacherProfile;
 import com.tutor.entity.User;
 import com.tutor.entity.UserRole;
+import com.tutor.repository.TeacherProfileRepository;
 import com.tutor.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private TeacherProfileRepository teacherProfileRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -40,8 +45,34 @@ public class UserService {
         user.setEmail(userDTO.getEmail());
         user.setPhone(userDTO.getPhone());
         user.setRole(UserRole.USER); // 默认注册为普通用户
+        
+        // 如果提供了教师信息，则设置为教师角色
+        boolean isTeacher = userDTO.getEducation() != null && !userDTO.getEducation().isEmpty();
+        if (isTeacher) {
+            user.setRole(UserRole.TEACHER);
+        }
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        
+        // 如果是教师，保存教师详细信息
+        if (isTeacher) {
+            TeacherProfile teacherProfile = new TeacherProfile();
+            teacherProfile.setUser(savedUser);
+            teacherProfile.setEducation(userDTO.getEducation());
+            
+            // 将科目列表转换为逗号分隔的字符串
+            if (userDTO.getSubjects() != null && !userDTO.getSubjects().isEmpty()) {
+                String subjects = String.join(",", userDTO.getSubjects());
+                teacherProfile.setSubjects(subjects);
+            }
+            
+            teacherProfile.setExperience(userDTO.getExperience());
+            teacherProfile.setBio(userDTO.getBio());
+            
+            teacherProfileRepository.save(teacherProfile);
+        }
+
+        return savedUser;
     }
 
     public User login(String username, String password) {

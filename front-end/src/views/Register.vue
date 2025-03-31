@@ -151,6 +151,7 @@ import {
   CheckCircleOutlined
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
+import { api } from '../utils/axios'
 
 const router = useRouter()
 const currentStep = ref(0)
@@ -224,15 +225,33 @@ function validateConfirmPassword(rule, value) {
 // 下一步
 const nextStep = () => {
   if (currentStep.value < 2) {
-    currentStep.value++
-    
-    // 如果是最后一步，模拟提交请求
-    if (currentStep.value === 2) {
+    // 第一步到第二步直接进行
+    if (currentStep.value === 0) {
+      currentStep.value++
+    } 
+    // 第二步提交到后端
+    else if (currentStep.value === 1) {
       loading.value = true
-      setTimeout(() => {
-        loading.value = false
+      
+      // 调用注册接口
+      api.register({
+        username: formState.username,
+        password: formState.password,
+        email: formState.email,
+        phone: formState.phone,
+        education: formState.role === 'teacher' ? formState.education : null,
+        subjects: formState.role === 'teacher' ? formState.subjects : null,
+        experience: formState.role === 'teacher' ? formState.experience : null,
+        bio: formState.role === 'teacher' ? formState.bio : null
+      }).then(() => {
+        currentStep.value++
         message.success('注册成功')
-      }, 1500)
+      }).catch(error => {
+        console.error('Registration failed:', error)
+        // 错误处理由axios拦截器完成
+      }).finally(() => {
+        loading.value = false
+      })
     }
   }
 }

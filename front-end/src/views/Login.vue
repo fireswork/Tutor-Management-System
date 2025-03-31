@@ -110,17 +110,14 @@ const onFinish = async (values) => {
     localStorage.setItem('userId', response.id)
     localStorage.setItem('userName', response.username)
     localStorage.setItem('userRole', response.role)
+    localStorage.setItem('token', response.token)
     // 根据角色判断是否为教师
     localStorage.setItem('isTeacher', (response.role === 'TEACHER').toString())
     
     message.success('登录成功')
     
     // 处理重定向
-    if (route.query.redirect) {
-      router.push(route.query.redirect)
-    } else {
-      router.push({ name: 'TeacherList' })
-    }
+    router.push({ path: '/home' })
   } catch (error) {
     // 错误处理已在axios拦截器中完成
     console.error('Login failed:', error)

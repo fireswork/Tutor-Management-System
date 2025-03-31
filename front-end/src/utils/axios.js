@@ -34,6 +34,9 @@ instance.interceptors.response.use(
   error => {
     if (error.response) {
       switch (error.response.status) {
+        case 400:
+          message.error(error.response.data.message || '请求参数错误')
+          break
         case 401:
           // token过期或未登录
           localStorage.removeItem('token')
@@ -62,6 +65,7 @@ instance.interceptors.response.use(
 // API请求方法
 export const api = {
   login: (data) => instance.post('/users/login', data),
+  register: (data) => instance.post('/users/register', data),
   // 可以继续添加其他API请求方法
 }
 
