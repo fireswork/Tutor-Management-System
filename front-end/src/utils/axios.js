@@ -16,6 +16,7 @@ instance.interceptors.request.use(
   config => {
     // 从localStorage获取token
     const token = localStorage.getItem('token')
+    console.log(token)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -29,6 +30,7 @@ instance.interceptors.request.use(
 // 响应拦截器
 instance.interceptors.response.use(
   response => {
+    console.log(response, 111)
     return response.data
   },
   error => {
@@ -36,7 +38,7 @@ instance.interceptors.response.use(
       console.log(error.response)
       switch (error.response.status) {
         case 400:
-          message.error(error.response.data.message || '请求参数错误')
+          message.error(error.response.data.error || '请求参数错误')
           break
         case 401:
           // token过期或未登录
@@ -55,7 +57,7 @@ instance.interceptors.response.use(
           message.error('服务器错误')
           break
         default:
-          message.error(error.response.data.message || '请求失败')
+          message.error(error.response.data.error || '请求失败')
       }
     } else {
       message.error('网络错误，请检查您的网络连接')
@@ -73,6 +75,23 @@ export const api = {
   getUserProfile: () => instance.get('/user/profile'),
   updateUserProfile: (data) => instance.put('/user/profile', data),
   changePassword: (data) => instance.post('/user/profile/change-password', data),
+  
+  // 资质管理相关接口
+  getQualifications: () => instance.get('/user/qualifications'),
+  getQualificationsByStatus: (status) => instance.get(`/user/qualifications/status/${status}`),
+  addQualification: (data) => instance.post('/user/qualifications', data),
+  deleteQualification: (id) => instance.delete(`/user/qualifications/${id}`),
+  
+  // 管理员审核资质接口
+  reviewQualification: (id, data) => instance.put(`/admin/qualifications/${id}/review`, data),
+  
+  // 教师管理相关接口
+  getAllTeachers: (params) => instance.get('/teachers', { params }),
+  getTeacherById: (id) => instance.get(`/teachers/${id}`),
+  addTeacher: (data) => instance.post('/teachers', data),
+  updateTeacher: (id, data) => instance.put(`/teachers/${id}`, data),
+  deleteTeacher: (id) => instance.delete(`/teachers/${id}`),
+  getTeacherQualifications: (id) => instance.get(`/teachers/${id}/qualifications`),
   
   // 可以继续添加其他API请求方法
 }

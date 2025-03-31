@@ -11,7 +11,6 @@ const UserQualifications = () => import("../views/user/UserQualifications.vue");
 const TeacherCenter = () => import("../views/TeacherCenter.vue");
 // const CourseManage = () => import('../views/CourseManage.vue')
 const OrderManage = () => import("../views/OrderList.vue");
-const OrderList = () => import("../views/OrderList.vue");
 const ReviewManage = () => import("../views/ReviewManage.vue");
 const UserManagement = () => import("../views/admin/UserManagement.vue");
 const TeacherManagement = () => import("../views/admin/TeacherManagement.vue");
@@ -114,6 +113,12 @@ const routes = [
     name: "SubjectManagement",
     component: SubjectManagement,
     meta: { title: "科目管理" },
+  },
+  {
+    path: '/teachers/:teacherId/qualifications',
+    name: 'TeacherQualificationReview',
+    component: () => import('../views/admin/TeacherQualificationReview.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
 ];
 

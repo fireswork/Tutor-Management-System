@@ -7,7 +7,9 @@
           <p>管理系统中的所有教师信息</p>
         </div>
       </div>
-      <a-button type="primary" @click="showAddModal">添加教师</a-button>
+      <div>
+        <a-button type="primary" @click="showAddModal" style="margin-right: 10px;">添加教师</a-button>
+      </div>
     </div>
 
     <!-- 搜索区域 -->
@@ -37,33 +39,16 @@
             <a-select-option value="chemistry">化学</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <a-select
-            v-model:value="searchForm.status"
-            style="width: 120px"
-            placeholder="在职状态"
-            allowClear
-            @change="handleSearch"
-          >
-            <a-select-option value="active">在职</a-select-option>
-            <a-select-option value="inactive">离职</a-select-option>
-          </a-select>
-        </a-form-item>
       </a-form>
     </div>
 
     <!-- 教师列表 -->
     <a-table :columns="columns" :data-source="filteredTeacherList" :loading="loading" bordered>
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
-          <a-tag :color="record.status === 'active' ? 'green' : 'red'">
-            {{ record.status === 'active' ? '在职' : '离职' }}
-          </a-tag>
-        </template>
         <template v-if="column.key === 'action'">
           <a-space>
             <a-button type="link" @click="handleEdit(record)">编辑</a-button>
-            <a-button type="link" @click="handleViewQualifications(record)">查看资质</a-button>
+            <a-button type="link" @click="handleReviewQualifications(record)">审核资质</a-button>
             <a-popconfirm
               title="确定要删除该教师吗？"
               @confirm="handleDelete(record.id)"
@@ -114,12 +99,6 @@
         <a-form-item label="教学经验" name="experience">
           <a-input-number v-model:value="formState.experience" :min="0" addonAfter="年" />
         </a-form-item>
-        <a-form-item label="状态" name="status">
-          <a-select v-model:value="formState.status">
-            <a-select-option value="active">在职</a-select-option>
-            <a-select-option value="inactive">离职</a-select-option>
-          </a-select>
-        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -156,62 +135,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useRouter } from 'vue-router'
+import axios, { api } from '../../utils/axios'
+
+const router = useRouter()
 
 // 搜索表单数据
 const searchForm = ref({
   name: '',
-  subject: undefined,
-  status: undefined
+  subject: undefined
 })
-
-// 模拟数据
-const mockTeachers = [
-  {
-    id: 1,
-    name: '张老师',
-    email: 'zhang@example.com',
-    phone: '13900139001',
-    subjects: ['math', 'physics'],
-    experience: 5,
-    status: 'active',
-    qualifications: {
-      teachingCertificate: '高级教师资格证',
-      education: '研究生',
-      major: '数学教育',
-      otherCertificates: ['奥数教练证']
-    }
-  },
-  {
-    id: 2,
-    name: '李老师',
-    email: 'li@example.com',
-    phone: '13900139002',
-    subjects: ['english'],
-    experience: 8,
-    status: 'active',
-    qualifications: {
-      teachingCertificate: '中级教师资格证',
-      education: '本科',
-      major: '英语教育',
-      otherCertificates: ['托福教师资格证', '雅思教师资格证']
-    }
-  },
-  {
-    id: 3,
-    name: '王老师',
-    email: 'wang@example.com',
-    phone: '13900139003',
-    subjects: ['chinese', 'english'],
-    experience: 3,
-    status: 'inactive',
-    qualifications: {
-      teachingCertificate: '初级教师资格证',
-      education: '本科',
-      major: '汉语言文学',
-      otherCertificates: []
-    }
-  }
-]
 
 // 表格列定义
 const columns = [
@@ -252,11 +185,6 @@ const columns = [
     customRender: ({ text }) => `${text}年`,
   },
   {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-  },
-  {
     title: '操作',
     key: 'action',
   },
@@ -273,39 +201,49 @@ const selectedTeacher = ref(null)
 
 // 筛选后的教师列表
 const filteredTeacherList = computed(() => {
-  return teacherList.value.filter(teacher => {
+  return teacherList.value?.filter(teacher => {
     const nameMatch = !searchForm.value.name || 
       teacher.name.toLowerCase().includes(searchForm.value.name.toLowerCase())
     const subjectMatch = !searchForm.value.subject || 
       teacher.subjects.includes(searchForm.value.subject)
-    const statusMatch = !searchForm.value.status || 
-      teacher.status === searchForm.value.status
-    return nameMatch && subjectMatch && statusMatch
+    return nameMatch && subjectMatch
   })
 })
 
 // 搜索
 const handleSearch = () => {
-  // 直接使用计算属性filteredTeacherList，无需额外处理
+  fetchTeacherList()
 }
 
 // 重置搜索
 const handleReset = () => {
   searchForm.value = {
     name: '',
-    subject: undefined,
-    status: undefined
+    subject: undefined
   }
+  fetchTeacherList()
 }
 
 // 获取教师列表
 const fetchTeacherList = async () => {
   loading.value = true
   try {
-    // 使用模拟数据
-    teacherList.value = mockTeachers
+    // 构建查询参数
+    const params = {}
+    if (searchForm.value.name) {
+      params.name = searchForm.value.name
+    }
+    if (searchForm.value.subject) {
+      params.subject = searchForm.value.subject
+    }
+    
+    // 调用API获取教师列表
+    const response = await api.getAllTeachers(params)
+    teacherList.value = response
   } catch (error) {
+    console.error('获取教师列表失败:', error)
     message.error('获取教师列表失败')
+    teacherList.value = [] // 失败时设置空列表
   } finally {
     loading.value = false
   }
@@ -319,8 +257,7 @@ const showAddModal = () => {
     email: '',
     phone: '',
     subjects: [],
-    experience: 0,
-    status: 'active',
+    experience: 0
   }
   modalVisible.value = true
 }
@@ -338,15 +275,24 @@ const handleViewQualifications = async (record) => {
   qualificationsModalVisible.value = true
 }
 
+// 跳转到资质审核页面
+const handleReviewQualifications = (record) => {
+  router.push({
+    name: 'TeacherQualificationReview',
+    params: { teacherId: record.id }
+  })
+}
+
 // 删除教师
 const handleDelete = async (id) => {
   try {
-    // TODO: 调用后端API删除教师
-    await fetch(`/api/teachers/${id}`, { method: 'DELETE' })
+    // 调用后端API删除教师
+    await api.deleteTeacher(id)
     message.success('删除成功')
     fetchTeacherList()
   } catch (error) {
-    message.error('删除失败')
+    console.error('删除教师失败:', error)
+    message.error(error.response?.data?.error || '删除失败')
   }
 }
 
@@ -354,19 +300,21 @@ const handleDelete = async (id) => {
 const handleModalOk = async () => {
   try {
     await formRef.value.validate()
-    // TODO: 调用后端API保存教师
-    const method = modalTitle.value === '添加教师' ? 'POST' : 'PUT'
-    const url = modalTitle.value === '添加教师' ? '/api/teachers' : `/api/teachers/${formState.value.id}`
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formState.value),
-    })
+    // 调用后端API保存教师
+    const isAdd = modalTitle.value === '添加教师'
+    
+    if (isAdd) {
+      await api.addTeacher(formState.value)
+    } else {
+      await api.updateTeacher(formState.value.id, formState.value)
+    }
+    
     message.success(`${modalTitle.value}成功`)
     modalVisible.value = false
     fetchTeacherList()
   } catch (error) {
     console.error(error)
+    message.error(error.response?.data?.error || `${modalTitle.value}失败`)
   }
 }
 

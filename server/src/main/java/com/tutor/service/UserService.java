@@ -2,10 +2,12 @@ package com.tutor.service;
 
 import com.tutor.dto.UserDTO;
 import com.tutor.dto.UserProfileDTO;
+import com.tutor.entity.Teacher;
 import com.tutor.entity.TeacherProfile;
 import com.tutor.entity.User;
 import com.tutor.entity.UserRole;
 import com.tutor.repository.TeacherProfileRepository;
+import com.tutor.repository.TeacherRepository;
 import com.tutor.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +23,9 @@ public class UserService {
     
     @Autowired
     private TeacherProfileRepository teacherProfileRepository;
+    
+    @Autowired
+    private TeacherRepository teacherRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -59,13 +64,15 @@ public class UserService {
         
         // 如果是教师，保存教师详细信息
         if (isTeacher) {
+            // 保存教师详细资料
             TeacherProfile teacherProfile = new TeacherProfile();
             teacherProfile.setUser(savedUser);
             teacherProfile.setEducation(userDTO.getEducation());
             
             // 将科目列表转换为逗号分隔的字符串
+            String subjects = "";
             if (userDTO.getSubjects() != null && !userDTO.getSubjects().isEmpty()) {
-                String subjects = String.join(",", userDTO.getSubjects());
+                subjects = String.join(",", userDTO.getSubjects());
                 teacherProfile.setSubjects(subjects);
             }
             
@@ -73,6 +80,15 @@ public class UserService {
             teacherProfile.setBio(userDTO.getBio());
             
             teacherProfileRepository.save(teacherProfile);
+            
+            // 同时创建Teacher记录
+            Teacher teacher = new Teacher();
+            teacher.setUser(savedUser);
+            teacher.setExperience(userDTO.getExperience() != null ? userDTO.getExperience() : 0);
+            teacher.setSubjects(subjects);
+            teacher.setStatus("active"); // 默认状态为active
+            
+            teacherRepository.save(teacher);
         }
 
         return savedUser;
